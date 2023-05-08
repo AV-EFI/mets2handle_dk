@@ -1,0 +1,3 @@
+url|<url to handle server>
+user|<username to handle server>
+password|<password to handle server>
