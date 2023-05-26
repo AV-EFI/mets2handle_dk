@@ -17,36 +17,33 @@ from lxml import etree as ET
 import uuid
 
 def getIdentifier(pid_work:str):
-    
-   
-    
     handleID =[ {'identifier':pid_work.upper()}]
     return {'type': 'identifiers','parsed_data':handleID}#21.T11148/fae9fd39301eb7e657d4
 
 def getTitle(dmdsec :ET,ns):
     """
-    Findet den Original Title
-    
+    Find the Original Title
+    #21.T11148/4b18b74f5ed1441bc6a3
     TODO:
-    Alle titel finden ?
+    In the current implementation only the last title with a valid titletype is used.
+    Maybe we are more interested in another field.
     """
     titles=[]
     titletypen = ['originaltitle', 'releasetitle', 'archivetitle', 'alternativetitle', 'sorttitle']
     
-    
-    
     for title in dmdsec.findall(".//dc:title", ns):
         if str(title.find('..').get('typeLabel')).lower() not in titletypen :
-        
+            """
+            TODO: Check if title can be mapped to on of the allowed titles.
+            Add info to log file.
+            """
             continue
         else:
             titletype=str(title.find('..').get('typeLabel'))
+            # Need to capitalize
             titletype=titletype[0].capitalize()+titletype[1:]
         titles.append({'titleValue':title.text, 'titleType':titletype})
-    title = {'type': 'titles',#21.T11148/4b18b74f5ed1441bc6a3
-             'parsed_data':
-             titles}
-    return title
+    return {'type': 'titles','parsed_data': titles}
 
 def getSeriesName(dmdsec,ns):
     
