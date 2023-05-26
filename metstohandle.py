@@ -64,7 +64,12 @@ multiworkno=0 # counter to ennumarate the files that result from the json dump f
 ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
 parser=ET.XMLParser(remove_comments=False)
 
-xml_tree = ET.parse(sys.argv[1],parser=parser)
+
+try:
+    arg1=sys.argv[1]
+    xml_tree = ET.parse(arg1,parser=parser)
+except IndexError:
+    raise SystemExit(f"Usage: {sys.argv[0]} <path_to_XML_file>")
 root=xml_tree.getroot()
 
 
