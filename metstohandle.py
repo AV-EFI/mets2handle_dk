@@ -47,15 +47,15 @@ Für jedes "version" DIV wird ein JSON-Objekt mit Hilfe des vh-Moduls erstellt u
 '''
 dumpjsons=True # set to false if you wish not to have the jsons that are sent to the handle server beeing outputted into this directory
 
-#reads credentials for the ePIC PID service
+# Read credentials for the ePIC PID service
 connection_details = {}
-with open("handle_connection.txt", "r") as f:
-    for line in f:
-        key, value = line.strip().split("|")
-        connection_details[key] = value
-
-# Um das Json object zu bauen wurde das json modul verwendet : https://docs.python.org/3/library/json.html
-# um bestimmte Strukturen zu erstellen, werden dicts und listen benutzt bzw. diese ineinander verschachtelt
+try:
+    with open("handle_connection.txt", "r") as f:
+        for line in f:
+            key, value = line.strip().split("|")
+            connection_details[key] = value
+except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
+    print('Please make sure that handle_connection.txt is in the same folder')
 
 header = {'accept': 'application/json', 'If-None-Match': 'default','If-Match': 'default', 'Content-Type': 'application/json'} # header für den post request
 multiworkno=0 # counter to ennumarate the files that result from the json dump for multiworks
@@ -64,9 +64,12 @@ multiworkno=0 # counter to ennumarate the files that result from the json dump f
 ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
 parser=ET.XMLParser(remove_comments=False)
 
-xml_tree = ET.parse(sys.argv[1],parser=parser)
+try:
+    arg1=sys.argv[1]
+    xml_tree = ET.parse(arg1,parser=parser)
+except IndexError:
+    raise SystemExit(f"Usage: {sys.argv[0]} <path_to_XML_file>")
 root=xml_tree.getroot()
-
 
 struct = xml_tree.find('.//mets:structMap', ns)
 
@@ -76,6 +79,7 @@ versions = []
 dataobjects=[]
 
 # Loop through the structure map of the METS file and find the DMDIDs of cinematographic works, versions, and data objects
+# TODO: Make sure only on valid TYPE is given in the mets file
 for div in struct.findall('.//mets:div', ns):
     type = div.get('TYPE')
 
@@ -100,14 +104,15 @@ dataobject_Pid='21.T11998/{}'.format(dataobject_Uid)
 
 for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
 
-    # if the ID attribute of the dmdSec element is in the list of cinematographic works,
-    #  generate a new UUID to use as the PID for the work, generate the JSON for the work,
+    # If the ID attribute of the dmdSec element is in the list of cinematographic works,
+    # generate a new UUID to use as the PID for the work, generate the JSON for the work,
     # write it to a file, and send a PUT request to the handle server to create a new handle for the work
-    if dmdsec.get('ID') in cinematographic_works and 1:
-        ###->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>hier abfrage, ob Werk bereits Pid hat
+    if dmdsec.get('ID') in cinematographic_works:
+        # TODO: hier abfrage, ob Werk bereits Pid hat
         uid=str(uuid.uuid4())
         cinematographic_work_pid='21.T11998/{}'.format(str(uid))
         cinematographic_work_pids.append(cinematographic_work_pid.upper())
+
         if dumpjsons:
             json.dump(xj.buildWorkJson(dmdsec, ns,pid_work= cinematographic_work_pid), open(str(multiworkno)+'handlejson.json', 'w', encoding='utf8'),
             indent=4, sort_keys=False,ensure_ascii=False)
@@ -143,12 +148,12 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
     # if the ID attribute of the dmdSec element is in the list of versions,
     #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
     # write it to a file, and send a PUT request to the handle server to create a new handle for the version
-    if    dmdsec.get('ID') in versions and 1:
-        ###->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
+    if dmdsec.get('ID') in versions:
+        # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
         uid=str(uuid.uuid4())
         version_pid='21.T11998/{}'.format(str(uid))
         if dumpjsons:
-            json.dump(vh.buildVersionJson(dmdsec, ns,pid_works= cinematographic_work_pids,dataobject_pid= dataobject_Pid,version_pid= version_pid), open('version.json', 'w', encoding='utf8'),
+            json.dump(vh.buildVersionJson(dmdsec, ns,pid_works= cinematographic_work_pids,dataobject_pid=dataobject_Pid,version_pid= version_pid), open('version.json', 'w', encoding='utf8'),
             indent=4, sort_keys=False,ensure_ascii=False)
 
         payload = vh.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataobject_Pid,version_pid=version_pid )
@@ -166,7 +171,7 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
 
             new_ident.text='\n              '
             dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).tail='\n\n            '
 
             new_tree=ET.tostring(xml_tree,pretty_print=True)
             with open (sys.argv[1],'wb') as metsfile:
@@ -180,12 +185,12 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
     #  generate a new UUID to use as the PID for the work, generate the JSON for the work,
     # write it to a file, and send a PUT request to the handle server to create a new handle for the work
     if dmdsec.get('ID') in dataobjects:
-
         json.dump(oh.buildData_Object_Json(dmdsec, ns , dataobject_Pid,version_pid), open('dataobject.json', 'w', encoding='utf8'),
             indent=4, sort_keys=False,ensure_ascii=False)
 
         payload=oh.buildData_Object_Json(dmdsec, ns,dataobject_Pid,version_pid)
 
+        # Create PID
         response_from_handle_server = requests.put(connection_details['url']+dataobject_Uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
         print(response_from_handle_server.text,response_from_handle_server.status_code)
