@@ -21,7 +21,6 @@ import uuid
 
 ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
 
-
 def getIdentifier(workPid:str):
     '''
     21.T11148/fae9fd39301eb7e657d4
@@ -29,7 +28,6 @@ def getIdentifier(workPid:str):
     #work_pid='21.T11148/{}'.format(str(uuid.uuid4()))
     #identifier= dmdsec.find('.//ebucore:identifiert',ns).find('.//dc:identifier',ns).text
     return {'type':'identifier','parsed_data':workPid.upper()}
-
 
 def isVersionof(pids_of_works):
     '''
