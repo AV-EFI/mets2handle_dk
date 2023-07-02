@@ -10,6 +10,7 @@ The function buildVersionJson is there to call all the defined functions and put
 it is possible to deselect values that one does not want in the json and therefore not sent to the handle server
 '''
 __author__ = "Henry Beiker"
+__maintainer__ = "Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
@@ -66,13 +67,13 @@ def releaseDate(dmdsec,ns):#
     releasedate=dmdsec.find('.//ebucore:date//ebucore:released',ns).get('year')
     return({'type':'release_date','parsed_data':releasedate})
 
-def getYears_of_reference(dmdsec,ns):#wird eventuell noch abgeändert
+def getYears_of_reference(dmdsec,ns):
     """
     Findet den Erstellsungszeitraum hier Benannt year of reference
     21.T11148/089d6db63cf69c35930d
     """
-    #years = [{'year_of_reference': dmdsec.find(
-    #    ".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear")}, {'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("endYear")}]
+    #years = [{'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear")},
+    #         {'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("endYear")}]
     if dmdsec.find('.//ebucore:date//ebucore:created',ns) != None:
         year=dmdsec.find('.//ebucore:date//ebucore:created',ns).get('startYear')
         return {'type': 'production_year','parsed_data':year}
@@ -80,6 +81,7 @@ def getYears_of_reference(dmdsec,ns):#wird eventuell noch abgeändert
         return None
 
 def getManifestationType(dmdsec,ns):
+    # Implements: 21.T11148/c72633267da87f952971
     types=[]
     for type in dmdsec.findall('.//ebucore:type//ebucore:objectType',ns):
         type_=type.get('typeLabel')
@@ -90,21 +92,25 @@ def getManifestationType(dmdsec,ns):
     return {'type':'manifestation_types','parsed_data':types}
 
 def getHasAgent(dmdsec,ns):
+    # Implements: 21.T11148/5a69721cca16545c03e6
     data=[]
     for companie in dmdsec.findall('.//ebucore_contributor',ns):
         data.append({'name':companie.find('.//ebucore:organisationDetails//ebucore:organisationName',ns).text,'identifier_uri':companie.find('.//ebucore:organisationDetails',ns).get('organisationID')})
     return {'type':'has_agent','parsed_data':data}
 
 def getSources(dmdsec,ns):
+    # Implements: 21.T11148/828d338a9b04221c9cbe
     dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName',ns)
-    source = {'type': 'source',#21.T11148/b33655d6fe2e0e7244de
-               'parsed_data':{'name':dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName',ns).text,'identifier_uri':dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',ns).get('organisationId')}}
+    source = {'type': 'source',
+               'parsed_data':{'name':dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName',ns).text,
+                              'identifier_uri':dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',ns).get('organisationId')}}
     return source
 
 def getLast_modified(dmdsec,ns):
+    # Implements: 21.T11148/a27923f25913583b1ea6
     """
-    21.T11148/cc9350e8525a1ca5ffe4
     Findet das Datum  an dem die Mets Datei zuletzt verändert wurde.
+    TODO: Klären ob hier nicht die letzte Änderung der PID eingetragen werden muss.
     """
     date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("+")
     uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('+')
@@ -157,6 +163,6 @@ def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid, version_pid,lastModi
 
     values.append({'type':'KernelInformationProfile','parsed_data':'21.T11148/ef6836b80e4d64e574e3'}) #version 0.1
 
-    json=  [value for value in values if value is not None]
+    json= [value for value in values if value is not None]
 
     return json
