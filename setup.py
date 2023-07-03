@@ -8,10 +8,10 @@ setup(name='mets2handle',
       packages=['mets2handle'],
       zip_safe=False,
       install_requires=[
-        'typing',
+        'typing==3.7.4.3',
         'lxml==4.9.2',
-        'requests',
+        'requests==2.31.0',
         'urllib3==2.0.3',
-        'uuid'
+        'uuid==1.30'
         ]
     )
