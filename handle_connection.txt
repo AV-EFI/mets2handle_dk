@@ -1,3 +1,3 @@
-url|<url to handle server>
-user|<username to handle server>
-password|<password to handle server>
+url|http://141.5.100.186:8080/handles/21.T11998/
+user|admin
+password|~Yy}NENSV>

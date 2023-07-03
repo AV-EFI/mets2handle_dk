@@ -397,28 +397,11 @@ def create_identifier_element(pid):
 
    ebuident = ET.Element('{urn:ebu:metadata-schema:ebucore}identifier',)
    ebuident.attrib['formatLabel'] = 'hdl.handle.net'
-   ebuident.text='\n    '
-
+   
+   ebuident.tail='\n          ' 
    dcident = ET.SubElement( ebuident, '{http://purl.org/dc/elements/1.1/}identifier')
-   dcident.text = pid+'\n              '
-   dcident.tail = '\n            '
-
-   attributor = ET.SubElement(
-       dcident, '{urn:ebu:metadata-schema:ebucore}attributor')
-   attributor.text = '\n               '
-   attributor.tail = '\n              '
-
-   orgadetals = ET.SubElement(
-       attributor, '{urn:ebu:metadata-schema:ebucore}organisationsDetails')
-   orgadetals.attrib['organisationsID'] = 'url to handle doku zu kinemathek?'
-   orgadetals.text = '\n                '
-   orgadetals.tail = '\n              '
-
-   organame = ET.SubElement(
-       orgadetals, '{urn:ebu:metadata-schema:ebucore}organisationName')
-   organame.text = 'Handlesystem ? Kinemathek ?'
-   organame.tail = '\n               '
-
+   dcident.text = '\n                    '+pid+'\n              '
+   dcident.tail = '         \n            '       
    return ebuident
 
 

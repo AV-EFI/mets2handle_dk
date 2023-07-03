@@ -1,1 +1,4 @@
 handle_connection.txt
+METS_samples_20230225/
+__pycache__/
+*.json
