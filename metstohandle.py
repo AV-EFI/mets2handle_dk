@@ -10,6 +10,7 @@ from typing import Text
 from lxml import etree as ET
 import json
 from requests.api import get , put
+import helper
 import sys
 import urllib.request ,urllib.error , urllib.parse
 import requests
@@ -77,7 +78,7 @@ struct = xml_tree.find('.//mets:structMap', ns)
 cinematographic_works = []
 versions = []
 dataobjects=[]
-
+boolean_list_if_pids_exists=[0,0,0] #to check wheater a a pid exist already or not
 # Loop through the structure map of the METS file and find the DMDIDs of cinematographic works, versions, and data objects
 # TODO: Make sure only on valid TYPE is given in the mets file
 for div in struct.findall('.//mets:div', ns):
@@ -109,104 +110,169 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
     # write it to a file, and send a PUT request to the handle server to create a new handle for the work
     if dmdsec.get('ID') in cinematographic_works:
         # TODO: hier abfrage, ob Werk bereits Pid hat
-        uid=str(uuid.uuid4())
-        cinematographic_work_pid='21.T11998/{}'.format(str(uid))
-        cinematographic_work_pids.append(cinematographic_work_pid.upper())
 
-        if dumpjsons:
-            json.dump(xj.buildWorkJson(dmdsec, ns,pid_work= cinematographic_work_pid), open(str(multiworkno)+'handlejson.json', 'w', encoding='utf8'),
-            indent=4, sort_keys=False,ensure_ascii=False)
+        
+        for identifier in dmdsec.findall('.//ebucore:identifier',ns): #checks if work has a existing pid. if thats the case we add a 1 to the boolean array
+            if identifier.get('formatLabel')=="hdl.handle.net":
+                boolean_list_if_pids_exists[0]=1
+                cinematographic_work_pids.append(str(identifier.find('.//dc:identifier',ns).text).strip()) 
+            
 
-        payload = xj.buildWorkJson(root, ns,pid_work=cinematographic_work_pid, original_duration=False,  related_identifier=False,original_format=False )
-        response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+        if not boolean_list_if_pids_exists[0] :
+            uid=str(uuid.uuid4())
+            cinematographic_work_pid='21.T11998/{}'.format(str(uid))
+            cinematographic_work_pids.append(cinematographic_work_pid.upper())
 
-        print(response_from_handle_server.status_code,response_from_handle_server.text)
+            if dumpjsons:
+                json.dump(xj.buildWorkJson(dmdsec, ns,pid_work= cinematographic_work_pid), open(str(multiworkno)+'handlejson.json', 'w', encoding='utf8'),
+                indent=4, sort_keys=False,ensure_ascii=False)
 
-        respon=json.loads(response_from_handle_server.text)
-        multiworkno=multiworkno+1
-        if response_from_handle_server.status_code==201:
-            #gets pid from response
-            pid=respon['handle']
+            payload = xj.buildWorkJson(root, ns,pid_work=cinematographic_work_pid, original_duration=False,  related_identifier=False,original_format=False )
+            response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
-            #writes new PID into the mets file
-            new_ident= xj.create_identifier_element(pid)
+            print(response_from_handle_server.text,response_from_handle_server.status_code,'Work Created')
 
-            new_ident.text='\n              '
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+            respon=json.loads(response_from_handle_server.text)
+            multiworkno=multiworkno+1
+            if response_from_handle_server.status_code==201:
+                #gets pid from response
+                pid=respon['handle']
 
-            new_tree=ET.tostring(xml_tree,pretty_print=True)
-            with open (sys.argv[1],'wb') as metsfile:
+                #writes new PID into the mets file
+                new_ident= xj.create_identifier_element(pid)
 
-                baum=ET.ElementTree(root)
-                baum.write(metsfile, xml_declaration=True,encoding='utf-8')
-                metsfile.close
-        else:
+                new_ident.text='\n              '
+                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
+                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
 
-            print(response_from_handle_server.status_code,respon)
+                new_tree=ET.tostring(xml_tree,pretty_print=True)
+                with open (sys.argv[1],'wb') as metsfile:
+
+                    baum=ET.ElementTree(root)
+                    baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                    metsfile.close
+            else:
+
+                print(response_from_handle_server.status_code,respon)
 
     # if the ID attribute of the dmdSec element is in the list of versions,
     #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
     # write it to a file, and send a PUT request to the handle server to create a new handle for the version
     if dmdsec.get('ID') in versions:
-        # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
         uid=str(uuid.uuid4())
         version_pid='21.T11998/{}'.format(str(uid))
-        if dumpjsons:
-            json.dump(vh.buildVersionJson(dmdsec, ns,pid_works= cinematographic_work_pids,dataobject_pid=dataobject_Pid,version_pid= version_pid), open('version.json', 'w', encoding='utf8'),
-            indent=4, sort_keys=False,ensure_ascii=False)
+        dataObjectPids=[dataobject_Pid]
+        # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
+        for identifier in dmdsec.findall('.//ebucore:identifier',ns): #checks if work has a existing pid. if thats the case we add a 1 to the boolean array
+            if identifier.get('formatLabel')=="hdl.handle.net":
+                boolean_list_if_pids_exists[1]=1
+                version_pid=str(identifier.find('.//dc:identifier',ns).text).strip()
+                uid=str(identifier.find('.//dc:identifier',ns).text).strip().split('/')[0]
+                dataObjectPids.extend(helper.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],connection_details['user'], connection_details['password']))
+                
+        
+        if not boolean_list_if_pids_exists[1]:
+            if dumpjsons:
+                json.dump(vh.buildVersionJson(dmdsec, ns,pid_works= cinematographic_work_pids,dataobject_pid=dataObjectPids,version_pid= version_pid), open('version.json', 'w', encoding='utf8'),
+                indent=4, sort_keys=False,ensure_ascii=False)
 
-        payload = vh.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataobject_Pid,version_pid=version_pid )
-        response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+            payload_version = vh.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataObjectPids,version_pid=version_pid )
 
-        print(response_from_handle_server.text,response_from_handle_server.status_code)
+            
+            
+            response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload_version))
 
-        if response_from_handle_server.status_code==201:
-            #gets pid from response
+            print(response_from_handle_server.text,response_from_handle_server.status_code,'Version Created')
+
+            if response_from_handle_server.status_code==201:
+                #gets pid from response
+                respon=json.loads(response_from_handle_server.text)
+                pid=respon['handle']
+
+                #writes new PID into the mets file
+                new_ident= xj.create_identifier_element(pid)
+
+                new_ident.text='\n              '
+                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
+                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).tail='\n\n            '
+
+                new_tree=ET.tostring(xml_tree,pretty_print=True)
+                with open (sys.argv[1],'wb') as metsfile:
+
+                    baum=ET.ElementTree(root)
+                    baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                    metsfile.close
+
             respon=json.loads(response_from_handle_server.text)
-            pid=respon['handle']
 
-            #writes new PID into the mets file
-            new_ident= xj.create_identifier_element(pid)
-
-            new_ident.text='\n              '
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).tail='\n\n            '
-
-            new_tree=ET.tostring(xml_tree,pretty_print=True)
-            with open (sys.argv[1],'wb') as metsfile:
-
-                baum=ET.ElementTree(root)
-                baum.write(metsfile, xml_declaration=True,encoding='utf-8')
-                metsfile.close
-
-        respon=json.loads(response_from_handle_server.text)
-    # if the ID attribute of the dmdSec element is in the list of cinematographic works,
-    #  generate a new UUID to use as the PID for the work, generate the JSON for the work,
-    # write it to a file, and send a PUT request to the handle server to create a new handle for the work
+    # if the ID attribute of the dmdSec element is in the list of dataobjects,
+    #  generate a new UUID to use as the PID for the work, generate the JSON for the dataobject,
+    # write it to a file, and send a PUT request to the handle server to create a new handle for the dataobject
     if dmdsec.get('ID') in dataobjects:
-        json.dump(oh.buildData_Object_Json(dmdsec, ns , dataobject_Pid,version_pid), open('dataobject.json', 'w', encoding='utf8'),
-            indent=4, sort_keys=False,ensure_ascii=False)
 
-        payload=oh.buildData_Object_Json(dmdsec, ns,dataobject_Pid,version_pid)
+        for identifier in dmdsec.findall('.//ebucore:identifier',ns): #checks if work has a existing pid. if thats the case we add a 1 to the boolean array
+            if identifier.get('formatLabel')=="hdl.handle.net":
+                boolean_list_if_pids_exists[2]=1
+                
 
-        # Create PID
-        response_from_handle_server = requests.put(connection_details['url']+dataobject_Uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+        if not boolean_list_if_pids_exists[2] and not boolean_list_if_pids_exists[1] : # dataobject, work or version has never been seen by the handle -> new mets
+            json.dump(oh.buildData_Object_Json(dmdsec, ns , dataobject_Pid,version_pid), open('dataobject.json', 'w', encoding='utf8'),
+                indent=4, sort_keys=False,ensure_ascii=False)
 
-        print(response_from_handle_server.text,response_from_handle_server.status_code)
-        if response_from_handle_server.status_code==201:
-            respon=json.loads(response_from_handle_server.text)
-            pid=respon['handle']
+            payload=oh.buildData_Object_Json(dmdsec, ns,dataobject_Pid,version_pid)
 
-            #writes new PID into the mets file
-            new_ident= xj.create_identifier_element(pid)
+            # Create PID
+            response_from_handle_server = requests.put(connection_details['url']+dataobject_Uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
-            new_ident.text='\n              '
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-            dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+            print(response_from_handle_server.text,response_from_handle_server.status_code,'Dataobject Created')
+            if response_from_handle_server.status_code==201:
+                respon=json.loads(response_from_handle_server.text)
+                pid=respon['handle']
 
-            new_tree=ET.tostring(xml_tree,pretty_print=True)
-            with open (sys.argv[1],'wb') as metsfile:
-                baum=ET.ElementTree(root)
-                baum.write(metsfile, xml_declaration=True,encoding='utf-8')
-                metsfile.close
+                #writes new PID into the mets file
+                new_ident= xj.create_identifier_element(pid)
+
+                new_ident.text='\n              '
+                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
+                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+
+                new_tree=ET.tostring(xml_tree,pretty_print=True)
+                with open (sys.argv[1],'wb') as metsfile:
+                    baum=ET.ElementTree(root)
+                    baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                    metsfile.close
+        print(boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[2])
+        if  boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[2]: #case fresh dataobject in mets where version and work have a pid already
+
+                    print('test')
+                    payload_version = vh.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataObjectPids,version_pid=version_pid )
+
+                    response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload_version))
+
+                    print(response_from_handle_server.text,response_from_handle_server.status_code,'Dataobject Created')
+
+                    json.dump(oh.buildData_Object_Json(dmdsec, ns , dataobject_Pid,version_pid), open('dataobject.json', 'w', encoding='utf8'),
+                    indent=4, sort_keys=False,ensure_ascii=False)
+
+                    payload=oh.buildData_Object_Json(dmdsec, ns,dataobject_Pid,version_pid)
+
+                    # Create PID
+                    response_from_handle_server = requests.put(connection_details['url']+dataobject_Uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+
+                    print(response_from_handle_server.text,response_from_handle_server.status_code)
+                    if response_from_handle_server.status_code==201:
+                        respon=json.loads(response_from_handle_server.text)
+                        pid=respon['handle']
+
+                        #writes new PID into the mets file
+                        new_ident= xj.create_identifier_element(pid)
+
+                        new_ident.text='\n              '
+                        dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
+                        dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+
+                        new_tree=ET.tostring(xml_tree,pretty_print=True)
+                        with open (sys.argv[1],'wb') as metsfile:
+                            baum=ET.ElementTree(root)
+                            baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                            metsfile.close

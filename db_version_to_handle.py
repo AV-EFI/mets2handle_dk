@@ -39,10 +39,12 @@ def isVersionof(pids_of_works):
     versions=pids_of_works
     return {'type':'is_version_of','parsed_data':versions}
 
-def hasDataObject(dataobjectpid:str):
+def hasDataObject(dataobjectpid:list):
     #geht davon aus, dass es nur ein dataobject pro mets gibt!
-    objects=[dataobjectpid.upper()]
-    return {'type':'has_data_objects','parsed_data':objects}
+    for dataobject in dataobjectpid:
+        dataobject=dataobject.upper()
+    
+    return {'type':'has_data_objects','parsed_data':dataobjectpid}
 
 def sameAs(dmdsec,ns):
     objects=['21.T11148/ef19de26cec8cae78ceb']#platzhalter pid auf same_as Registry -> aktuell nicht im mets zu finden
@@ -124,7 +126,7 @@ def getLast_modified(dmdsec,ns):
         time = split[0]+'-'+split[1]+'-'+split[2]+' '+uhrzeit[0]+'+'+uhrzeit[1]
     return {'type': 'last_modified', 'parsed_data': time}
 
-def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid, version_pid,lastModified=True,Sources=True,HasAgent=True,ManfiestationType=True,YearsofReference=True,releasedate=False,sameas=True,title=False, DataObject=True,VerisonOf=True,identifier=True):
+def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,lastModified=True,Sources=True,HasAgent=True,ManfiestationType=True,YearsofReference=True,releasedate=False,sameas=True,title=False, DataObject=True,VerisonOf=True,identifier=True):
     json=dict()
     valuedict=dict()
     values=[]
