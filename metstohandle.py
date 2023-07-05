@@ -10,7 +10,7 @@ from typing import Text
 from lxml import etree as ET
 import json
 from requests.api import get , put
-import helper
+import helpers
 import sys
 import urllib.request ,urllib.error , urllib.parse
 import requests
