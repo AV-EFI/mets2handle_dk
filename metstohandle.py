@@ -18,6 +18,7 @@ import db_works_tohandle as xj
 import db_version_to_handle as vh
 import db_data_object_to_handle as oh
 import uuid
+
 '''
 Vollständige Menschen am Sonntag Handle unter handle id 21.T11998/0412EF68-FC59-4240-9D5D-EEA25F083873
 
@@ -167,7 +168,7 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
             if identifier.get('formatLabel')=="hdl.handle.net":
                 boolean_list_if_pids_exists[1]=1
                 version_pid=str(identifier.find('.//dc:identifier',ns).text).strip()
-                uid=str(identifier.find('.//dc:identifier',ns).text).strip().split('/')[0]
+                uid=str(identifier.find('.//dc:identifier',ns).text).strip().split('/')[1]
                 dataObjectPids.extend(helper.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],connection_details['user'], connection_details['password']))
                 
         
@@ -190,7 +191,10 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
                 pid=respon['handle']
 
                 #writes new PID into the mets file
+                for workPid in cinematographic_work_pids:
+                    dmdsec.find('.//ebucore:isVersionOf',ns).addprevious(helper.buildisVersiontOfVersionXML(workPid))
                 new_ident= xj.create_identifier_element(pid)
+                
 
                 new_ident.text='\n              '
                 dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
@@ -241,15 +245,18 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
                     baum=ET.ElementTree(root)
                     baum.write(metsfile, xml_declaration=True,encoding='utf-8')
                     metsfile.close
-        print(boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[2])
+        
         if  boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[2]: #case fresh dataobject in mets where version and work have a pid already
 
-                    print('test')
+                    
                     payload_version = vh.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataObjectPids,version_pid=version_pid )
-
+                    print(payload_version)
+                    print(uid)
                     response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload_version))
 
                     print(response_from_handle_server.text,response_from_handle_server.status_code,'Dataobject Created')
+
+                    print(response_from_handle_server)
 
                     json.dump(oh.buildData_Object_Json(dmdsec, ns , dataobject_Pid,version_pid), open('dataobject.json', 'w', encoding='utf8'),
                     indent=4, sort_keys=False,ensure_ascii=False)
