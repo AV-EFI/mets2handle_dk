@@ -22,6 +22,8 @@ def getDAtaObejctPidsFrom_Versionhandle(pidOfVersion:str,url:str,user:str,passwo
 def buildisVersiontOfVersionXML(pidWerk:str):
 
     root = ET.Element("{urn:ebu:metadata-schema:ebucore}isVersionOf")
+
+    root.tail='     \n  '
     
     # Create the relationIdentifier element
     relation_identifier = ET.SubElement(root, "{urn:ebu:metadata-schema:ebucore}relationIdentifier", formatLabel="hdl.handle.net")
@@ -34,3 +36,35 @@ def buildisVersiontOfVersionXML(pidWerk:str):
     
 
     return root
+
+def buildIsPartOfInXML(pidVersion:str):
+
+    root = ET.Element("{urn:ebu:metadata-schema:ebucore}isPartOf")
+
+    root.tail='     \n  '
+    
+    # Create the relationIdentifier element
+    relation_identifier = ET.SubElement(root, "{urn:ebu:metadata-schema:ebucore}relationIdentifier", formatLabel="hdl.handle.net")
+
+    # Create the dc:identifier element
+    dc_identifier = ET.SubElement(relation_identifier, "{http://purl.org/dc/elements/1.1/}identifier")
+    dc_identifier.text = pidVersion
+
+    return root
+
+def buildHasPartInXML(pidDataobject:str):
+    
+    root = ET.Element("{urn:ebu:metadata-schema:ebucore}hasPart")
+
+    root.tail='     \n  '
+    
+    # Create the relationIdentifier element
+    relation_identifier = ET.SubElement(root, "{urn:ebu:metadata-schema:ebucore}relationIdentifier", formatLabel="hdl.handle.net")
+
+    # Create the dc:identifier element
+    dc_identifier = ET.SubElement(relation_identifier, "{http://purl.org/dc/elements/1.1/}identifier")
+    dc_identifier.text = pidDataobject
+
+    return root
+    
+

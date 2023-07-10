@@ -126,7 +126,7 @@ def getLast_modified(dmdsec,ns):
         time = split[0]+'-'+split[1]+'-'+split[2]+' '+uhrzeit[0]+'+'+uhrzeit[1]
     return {'type': 'last_modified', 'parsed_data': time}
 
-def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,lastModified=True,Sources=True,HasAgent=True,ManfiestationType=True,YearsofReference=True,releasedate=False,sameas=True,title=False, DataObject=True,VerisonOf=True,identifier=True):
+def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,lastModified=True,Sources=True,HasAgent=True,ManfiestationType=True,YearsofReference=True,releasedate=True,sameas=True,title=False, DataObject=True,VerisonOf=True,identifier=True):
     json=dict()
     valuedict=dict()
     values=[]

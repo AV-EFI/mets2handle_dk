@@ -163,13 +163,13 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
         uid=str(uuid.uuid4())
         version_pid='21.T11998/{}'.format(str(uid))
         dataObjectPids=[dataobject_Pid]
-        # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
+        
         for identifier in dmdsec.findall('.//ebucore:identifier',ns): #checks if work has a existing pid. if thats the case we add a 1 to the boolean array
             if identifier.get('formatLabel')=="hdl.handle.net":
                 boolean_list_if_pids_exists[1]=1
                 version_pid=str(identifier.find('.//dc:identifier',ns).text).strip()
                 uid=str(identifier.find('.//dc:identifier',ns).text).strip().split('/')[1]
-                dataObjectPids.extend(helper.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],connection_details['user'], connection_details['password']))
+                dataObjectPids.extend(helpers.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],connection_details['user'], connection_details['password']))
                 
         
         if not boolean_list_if_pids_exists[1]:
@@ -192,7 +192,7 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
 
                 #writes new PID into the mets file
                 for workPid in cinematographic_work_pids:
-                    dmdsec.find('.//ebucore:isVersionOf',ns).addprevious(helper.buildisVersiontOfVersionXML(workPid))
+                    dmdsec.find('.//ebucore:isVersionOf',ns).addprevious(helpers.buildisVersiontOfVersionXML(workPid))
                 new_ident= xj.create_identifier_element(pid)
                 
 
@@ -233,6 +233,11 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
                 respon=json.loads(response_from_handle_server.text)
                 pid=respon['handle']
 
+
+                dmdsec.find('.//ebucore:isPartOf',ns).addprevious(helpers.buildIsPartOfInXML(version_pid))
+                for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
+                    if dmdsec.get('ID') in versions:
+                        dmdsec.find('.//ebucore:hasPart',ns).addprevious(helpers.buildHasPartInXML(dataobject_Pid))
                 #writes new PID into the mets file
                 new_ident= xj.create_identifier_element(pid)
 
@@ -273,7 +278,10 @@ for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
 
                         #writes new PID into the mets file
                         new_ident= xj.create_identifier_element(pid)
-
+                        dmdsec.find('.//ebucore:isPartOf',ns).addprevious(helpers.buildIsPartOfInXML(version_pid))
+                        for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
+                            if dmdsec.get('ID') in versions:
+                                dmdsec.find('.//ebucore:hastPart',ns).addprevious(helpers.buildHasPartInXML(dataobject_Pid))
                         new_ident.text='\n              '
                         dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
                         dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '

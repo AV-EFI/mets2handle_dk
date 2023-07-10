@@ -16,11 +16,13 @@ def specific_Carrier_type(dmdsec,ns):
     for description in dmdsec.findall('.//ebucore:description',ns):
         if description.get('typeLabel')=='specificCarrierType':
             carrier=description.find('.//dc:description',ns).text
+            return {'type':'specific_carrier_type','parsed_data':carrier}
 
 def perservationAccessStatus(dmdsec,ns):
     for description in dmdsec.findall('.//ebucore:description',ns):
         if description.get('typeLabel')=='accessStatus':
-            carrier=description.find('.//dc:description',ns).text
+            status=description.find('.//dc:description',ns).text
+            return {'type':'preservation_access_status','parsed_data':status}
 
 def sumplementaryInformation(dmdsec,ns):
     for description in dmdsec.findall('.//ebucore:description',ns):
@@ -90,7 +92,8 @@ def buildData_Object_Json(dmdsec,ns,dataobjectPid,workpid):
 
     values.append(sumplementaryInformation(dmdsec,ns))
 
-    values.append(perservationAccessStatus(dmdsec,ns))
+    
+    #values.append(perservationAccessStatus(dmdsec,ns)) TODO uncomment as soon as enum list is ready
 
     values.append(specific_Carrier_type(dmdsec,ns))
 
