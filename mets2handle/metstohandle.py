@@ -124,8 +124,8 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
                 indent=4, sort_keys=False,ensure_ascii=False)
 
             payload = mets2handle.buildWorkJson(root, ns,pid_work=cinematographic_work_pid, original_duration=False,  related_identifier=False,original_format=False )
+            print('CREATE PID FOR WORK -----------------------')
             response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
-
             print(response_from_handle_server.status_code,response_from_handle_server.text)
 
             respon=json.loads(response_from_handle_server.text)
@@ -165,8 +165,7 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
             payload = mets2handle.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataobject_Pid,version_pid=version_pid )
             print('CREATE PID FOR VERSION -----------------------')
             response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
-
-            print(response_from_handle_server.text,response_from_handle_server.status_code)
+            #print(response_from_handle_server.text,response_from_handle_server.status_code)
 
             if response_from_handle_server.status_code==201:
                 #gets pid from response
@@ -186,6 +185,11 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
                     baum=ET.ElementTree(root)
                     baum.write(metsfile, xml_declaration=True,encoding='utf-8')
                     metsfile.close
+            elif response_from_handle_server.status_code==400:
+                print('Wrongly formatted request')
+                print(payload)
+            else:
+                print('Unkown Error. Please debug the code!')
 
             respon=json.loads(response_from_handle_server.text)
         # if the ID attribute of the dmdSec element is in the list of cinematographic works,
