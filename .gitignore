@@ -2,3 +2,5 @@ handle_connection.txt
 METS_samples_20230225/
 __pycache__/
 *.json
+mets2handle.egg-info
+build
