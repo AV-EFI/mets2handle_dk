@@ -72,13 +72,11 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
     parser=ET.XMLParser(remove_comments=False)
 
     try:
-        #arg1=sys.argv[1]
-        arg1=filename
-        xml_tree = ET.parse(arg1,parser=parser)
+        xml_tree = ET.parse(filename,parser=parser)
     except IndexError:
         raise SystemExit(f"Usage: {sys.argv[0]} <path_to_XML_file>")
-    root=xml_tree.getroot()
 
+    root=xml_tree.getroot()
     struct = xml_tree.find('.//mets:structMap', ns)
 
     # Create empty lists for the DMDIDs of cinematographic works, versions, and data objects
@@ -108,7 +106,7 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
     # has to be done here so we have it already when we get to
     # the Version object where the entry for the PID of a dataobject is needed
     dataobject_Uid=str(uuid.uuid4())
-    dataobject_Pid='21.T11998/{}'.format(dataobject_Uid)
+    dataobject_Pid=connection_details['prefix']+'/{}'.format(dataobject_Uid)
 
     for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
 
@@ -118,7 +116,7 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
         if dmdsec.get('ID') in cinematographic_works:
             # TODO: hier abfrage, ob Werk bereits Pid hat
             uid=str(uuid.uuid4())
-            cinematographic_work_pid='21.T11998/{}'.format(str(uid))
+            cinematographic_work_pid=connection_details['prefix']+'/{}'.format(str(uid))
             cinematographic_work_pids.append(cinematographic_work_pid.upper())
 
             if dumpjsons:
@@ -159,12 +157,13 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
         if dmdsec.get('ID') in versions:
             # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
             uid=str(uuid.uuid4())
-            version_pid='21.T11998/{}'.format(str(uid))
+            version_pid=connection_details['prefix']+'/{}'.format(str(uid))
             if dumpjsons:
                 json.dump(mets2handle.buildVersionJson(dmdsec, ns,pid_works= cinematographic_work_pids,dataobject_pid=dataobject_Pid,version_pid= version_pid), open('version.json', 'w', encoding='utf8'),
                 indent=4, sort_keys=False,ensure_ascii=False)
 
             payload = mets2handle.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataobject_Pid,version_pid=version_pid )
+            print('CREATE PID FOR VERSION -----------------------')
             response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
             print(response_from_handle_server.text,response_from_handle_server.status_code)
@@ -198,7 +197,7 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
 
             payload=mets2handle.buildData_Object_Json(dmdsec, ns,dataobject_Pid,version_pid)
 
-            # Create PID
+            print('CREATE PID FOR DATA OBJECT -----------------------')
             response_from_handle_server = requests.put(connection_details['url']+dataobject_Uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
             print(response_from_handle_server.text,response_from_handle_server.status_code)
