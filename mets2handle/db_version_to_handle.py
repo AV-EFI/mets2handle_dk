@@ -44,6 +44,8 @@ def hasDataObject(dataobjectpid:list):
     for dataobject in dataobjectpid:
         dataobject=dataobject.upper()
     
+    if not isinstance(dataobjectpid,list):
+        dataobjectpid = [dataobjectpid]
     return {'type':'has_data_objects','parsed_data':dataobjectpid}
 
 def sameAs(dmdsec,ns):
@@ -65,8 +67,11 @@ def titles(dmdsec,ns):
              titles}
     return title
 
-def releaseDate(dmdsec,ns):#
+def releaseDate(dmdsec,ns):
+    # Release data has to be given in YYYY-MM-DD
     releasedate=dmdsec.find('.//ebucore:date//ebucore:released',ns).get('year')
+    # if only year is given, we apped -01-01
+    releasedate=releasedate+'-01-01'
     return({'type':'release_date','parsed_data':releasedate})
 
 def getYears_of_reference(dmdsec,ns):
