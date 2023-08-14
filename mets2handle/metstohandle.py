@@ -20,6 +20,8 @@ import uuid
 from pathlib import Path
 
 import mets2handle
+
+
 '''
 Vollständige Menschen am Sonntag Handle unter handle id 21.T11998/0412EF68-FC59-4240-9D5D-EEA25F083873
 
@@ -79,7 +81,8 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
     except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
         print('Please make sure that handle_connection.txt is in the same folder')
 
-    header = {'accept': 'application/json', 'If-None-Match': 'default','If-Match': 'default', 'Content-Type': 'application/json'} # header für den post request
+    header = {'accept': 'application/json', 'If-None-Match': 'default','If-Match': 'default', 'Content-Type': 'application/json'}
+    
     multiworkno=0 # counter to ennumarate the files that result from the json dump for multiworks
 
     # Defining namespace dictionary to be used later in the code to access XML data
@@ -129,7 +132,7 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
         # generate a new UUID to use as the PID for the work, generate the JSON for the work,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the work
         if dmdsec.get('ID') in cinematographic_works:
-            # TODO: hier abfrage, ob Werk bereits Pid hat
+            # TODO: hier abfrage, ob Werk bereits PID hat
             uid=str(uuid.uuid4())
             cinematographic_work_pid=connection_details['prefix']+'/{}'.format(str(uid))
             cinematographic_work_pids.append(cinematographic_work_pid.upper())

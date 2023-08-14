@@ -29,6 +29,7 @@ import xml.etree.ElementTree as ET
 import sys
 import requests
 import uuid
+import helpers
 
 ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
 
@@ -79,7 +80,11 @@ def titles(dmdsec,ns):
 
 def releaseDate(dmdsec,ns):
     # Release data has to be given in YYYY-MM-DD
-    releasedate=dmdsec.find('.//ebucore:date//ebucore:released',ns).get('year')
+    try:
+        releasedate=dmdsec.find('.//ebucore:date//ebucore:released',ns).get('year')
+    except AttributeError:
+        helpers.logger.error('VERSION: No release date found')
+        releasedate='1000'
     # if only year is given, we apped -01-01
     releasedate=releasedate+'-01-01'
     return({'type':'release_date','parsed_data':releasedate})
