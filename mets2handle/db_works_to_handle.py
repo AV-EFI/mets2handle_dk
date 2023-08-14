@@ -46,7 +46,10 @@ def getTitle(dmdsec :ET,ns):
         try:
             titles.append({'titleValue':title.text, 'titleType':helpers.vocab_map[titlestring]})
         except KeyError:
-            helpers.logger.error('WORK: Titel Type '+titlestring+' not in vocab_map.json')
+            helpers.logger.error('WORK: Titel Type "'+titlestring+'" not in vocab_map.json')
+        # If already mapped:
+        if titlestring in titletypes:
+            titles.append({'titleValue':title.text, 'titleType':titlestring})
     return {'type': 'title','parsed_data': titles}
 
 def getSeriesName(dmdsec,ns):
@@ -80,21 +83,22 @@ def getCredits(dmdsec,ns):
     """
     Findet den Regisseur
     """
-    creditoptions=["Assistant Camera Operator","2nd Unit Director","2nd Unit Director of Photography","Adaptation","Animation","Art Director",
-                    "Artistic direction","Assistant","Assistant Art Direction","Assistant Camera Operator","Assistant Director","Assistant Editor",
-                    "Assistant Set Designer","Associate producer","Casting Director","Caterer","Chief Lighting Technician","Choreographer","Clapper Loader",
-                    "Commentary","Compilation","Consultant","Continuity","Costume Design","Director","Director of Photography","Editor","Executive Producer",
-                    "Film Funding","Foley Artist","Gowns by","Host","Idea","Lamp Operator","Line Producer","Location Scout","Make-up","Musical direction","Narration",
-                    "Negative Cutter","Pre-Production Design","Producer","Producer","Production Assistant","Production design","Props","Researcher","Screenplay","Set Decorator",
-                    "Set Decorator","Set Designer","Singing Voice","Sound","Sound Assistant","Sound Design","Sound Editor","Sound Recordist","Source Material","Special Effects",
-                    "Special Effects Camera","Steadicam Operator","Still Photography","Stock Footage","Storyboard Artist","Stunt Coordinator","Title Design","TV Director","Visual Effects"]
+    creditsRole = helpers.getEnumFromType('21.T11148/8dca46428d005a2f4c2e')
+    #creditoptions=["Assistant Camera Operator","2nd Unit Director","2nd Unit Director of Photography","Adaptation","Animation","Art Director",
+    #                "Artistic direction","Assistant","Assistant Art Direction","Assistant Camera Operator","Assistant Director","Assistant Editor",
+    #                "Assistant Set Designer","Associate producer","Casting Director","Caterer","Chief Lighting Technician","Choreographer","Clapper Loader",
+    #                "Commentary","Compilation","Consultant","Continuity","Costume Design","Director","Director of Photography","Editor","Executive Producer",
+    #                "Film Funding","Foley Artist","Gowns by","Host","Idea","Lamp Operator","Line Producer","Location Scout","Make-up","Musical direction","Narration",
+    #                "Negative Cutter","Pre-Production Design","Producer","Producer","Production Assistant","Production design","Props","Researcher","Screenplay","Set Decorator",
+    #                "Set Decorator","Set Designer","Singing Voice","Sound","Sound Assistant","Sound Design","Sound Editor","Sound Recordist","Source Material","Special Effects",
+    #                "Special Effects Camera","Steadicam Operator","Still Photography","Stock Footage","Storyboard Artist","Stunt Coordinator","Title Design","TV Director","Visual Effects"]
 
     credits=[]
     for contributor in dmdsec.findall('.//ebucore:contributor',ns):
 
         for role in contributor.findall('.//ebucore:role',ns):
 
-            if role.get('typeLabel').lower() in [creditoption.lower() for creditoption in creditoptions]:
+            if role.get('typeLabel').lower() in [creditoption.lower() for creditoption in creditsRole]:
                 name=contributor.find('./ebucore:contactDetails',ns).find('./ebucore:name',ns).text.split(',')
 
                 if contributor.find('.//ebucore:contactDetails',ns).get('contactId') != None: #checktob es eine uri gibt
