@@ -1,15 +1,25 @@
 '''
-This module implements the creation of the PID records for the
-manifestion/version-KernelInformationProfile.
+This module implements the creation of the PID records for the manifestion/version.
 
-It is designed to map the values from the METS XML files to the values in the Handle System.
-For that each function is a mapping which searches for the value in a section of the METS file and puts it in a Dictionary which has the format of
-{type:<value that is defined in the handle>,parsed_data:<object or value defined in the handle>}
+It is designed to map the values from the METS XML files to the required values.
+For that each function is a mapping which searches for the value in a section 
+of the METS file and puts it in a dictionary which has the format of:
+{
+    type:<value that is defined in the handle>,
+    parsed_data:<object or value defined in the handle>
+}
 
-The function buildVersionJson is there to call all the defined functions and put them into a format, so that the json library can covert the dictionary into a json file that is accepted by the handle server
-it is possible to deselect values that one does not want in the json and therefore not sent to the handle server
+The function buildVersionJson is there to call all the defined functions and
+put them into a format, so that the JSON library can convert the dictionary into 
+a JSON file that is accepted by the PID system. It is possible to deselect values 
+that one does not want in the json and therefore will not be sent to the 
+PID system.
+
+The Metadata follow the definitions of
+Manifestation: https://dtr-test.pidconsortium.net/#objects/21.T11148/ef6836b80e4d64e574e3
+
 '''
-__author__ = "Henry Beiker"
+__author__ = "Henry Beiker, Sven Bingert"
 __maintainer__ = "Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"

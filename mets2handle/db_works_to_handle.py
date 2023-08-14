@@ -1,32 +1,23 @@
 '''
-This module implements the mapping from the relevant Values in the METS xml to a JSON file that contains the Data for an Work Object which represents a cinematographic work.
-The functions basicly map from the METS xml Values to  Handle Values by putting the Values from the XML files into dictionarys that can later be transformed to a JSON file that can be sent to the Handle server.
+This module implements the mapping from the relevant values in the METS xml to 
+a JSON file that contains the data for an Work Object which represents a 
+cinematographic work. The functions basicly map from the METS xml values to  
+standardized values by putting the values from the XML files into dictionarys 
+that can later be transformed into a JSON file that can be sent to the PID 
+service.
 
-The function "buildWorkJson" calls al the functions and puts them into the right order to appear in the json file. It is possible to deselect values that should not appear in the json and therefore are not sent
-to the handle server
+The function "buildWorkJson" calls all the functions and puts them into the 
+right order to appear in the JSON file. It is possible to deselect values that 
+should not appear in the JSON and therefore will not be sent to the PID service.
 
-the function "create_identifier_element" creates and xml element that contains the information about the PID and which can later be inserted into the original METS file
+The function "create_identifier_element" creates and xml element that contains 
+the information about the PID and which can later be inserted into the original 
+METS file.
 
-'KernelInformationProfile'
-'cast'
-'countryOfReference'
-'credits'
-'genre'
-'identifiers'
-'lastModified'
-'originalDuration'
-'originalFormat'
-'originalLanguage'
-'originalLength'
-'productionCompany'
-'relatedIdentifier'
-'schema_version'
-'series'
-'source'
-'title'
-'yearOfReference'
+The Metadata follow the definitions of
+Work: https://dtr-test.pidconsortium.net/#objects/21.T11148/31b848e871121c47d064
 '''
-__author__ = "Henry Beiker"
+__author__ = "Henry Beiker, Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"

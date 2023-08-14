@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__ = "Henry Beiker"
+__author__ = "Henry Beiker, Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
@@ -23,29 +23,44 @@ import mets2handle
 '''
 Vollständige Menschen am Sonntag Handle unter handle id 21.T11998/0412EF68-FC59-4240-9D5D-EEA25F083873
 
-Dies ist ein Python-Code, der ein METS-Dokument (Metadata Encoding and Transmission Standard) verarbeitet und bestimmte Teile davon in JSON-Objekte umwandelt, die dann an einen Handle-Server gesendet werden. Der Handle-Server ist ein System zur Zuweisung von persistenten Identifikatoren (Handles) zu digitalen Objekten, um ihre Langzeitarchivierung und -verfügbarkeit zu gewährleisten.
+Dies ist ein Python-Code, der ein METS-Dokument (Metadata Encoding and 
+Transmission Standard) verarbeitet und bestimmte Teile davon in JSON-Objekte 
+umwandelt, die dann an einen Handle-Server gesendet werden. Der Handle-Server 
+ist ein System zur Zuweisung von persistenten Identifikatoren (Handles) zu 
+digitalen Objekten, um ihre Langzeitarchivierung und -verfügbarkeit zu g
+ewährleisten.
 
 Die wichtigsten Bibliotheken, die in diesem Code verwendet werden, sind:
+* lxml.etree zum Parsen des METS-Dokuments
+* json zum Erstellen von JSON-Objekten
+* requests zum Senden von HTTP-Anfragen an den Handle-Server
 
-lxml.etree (importiert als ET) zum Parsen des METS-Dokuments
-json zum Erstellen von JSON-Objekten
-requests zum Senden von HTTP-Anfragen an den Handle-Server
 Einige wichtige Variablen, Funktionen und Abschnitte des Codes sind:
+* url: Die URL des Handle-Servers, an den die JSON-Objekte gesendet werden.
+* header: Einige HTTP-Header, die in den POST- und PUT-Anfragen verwendet 
+    werden, um den Server darüber zu informieren, welche Art von Daten erwartet werden.
+* struct: Das structMap-Element im METS-Dokument, das die Struktur des Dokuments beschreibt.
+* cineworks und version: Listen von div-Elementen im METS-Dokument, die den 
+    Typ "cinematographicWork" bzw. "version" haben. Diese werden später verwendet, um 
+    bestimmte Teile des Dokuments zu finden und in JSON-Objekte umzuwandeln.
+* xj und vh: Module mit Hilfsfunktionen zum Erstellen von JSON-Objekten aus den METS-Daten.
+* uuid.uuid4(): Eine Funktion zum Generieren einer eindeutigen UUID (Universally 
+    Unique Identifier), die als Teil der Handle-ID für jeden erstellten cineastischen 
+    Work verwendet wird.
+* requests.post() und requests.put(): Funktionen zum Senden von HTTP-POST- bzw. 
+    PUT-Anfragen an den Handle-Server mit den erstellten JSON-Daten.
+* sys.argv[1]: Der Pfad zum METS-Dokument, der als Argument beim Aufruf des Skripts 
+    übergeben wird.
 
-url: Die URL des Handle-Servers, an den die JSON-Objekte gesendet werden.
-header: Einige HTTP-Header, die in den POST- und PUT-Anfragen verwendet werden, um den Server darüber zu informieren, welche Art von Daten erwartet werden.
-struct: Das structMap-Element im METS-Dokument, das die Struktur des Dokuments beschreibt.
-cineworks und version: Listen von div-Elementen im METS-Dokument, die den Typ "cinematographicWork" bzw. "version" haben. Diese werden später verwendet, um bestimmte Teile des Dokuments zu finden und in JSON-Objekte umzuwandeln.
-xj und vh: Module mit Hilfsfunktionen zum Erstellen von JSON-Objekten aus den METS-Daten.
-uuid.uuid4(): Eine Funktion zum Generieren einer eindeutigen UUID (Universally Unique Identifier), die als Teil der Handle-ID für jeden erstellten cineastischen Work verwendet wird.
-requests.post() und requests.put(): Funktionen zum Senden von HTTP-POST- bzw. PUT-Anfragen an den Handle-Server mit den erstellten JSON-Daten.
-sys.argv[1]: Der Pfad zum METS-Dokument, der als Argument beim Aufruf des Skripts übergeben wird.
 Der Code funktioniert wie folgt:
-
-Das METS-Dokument wird mit lxml.etree geparsed und das structMap-Element wird gefunden, um die Liste der "cinematographicWork" und "version" DIVs zu erstellen.
-Für jedes "cinematographicWork" DIV wird eine Handle-ID generiert und ein JSON-Objekt mit Hilfe des xj-Moduls erstellt. Dieses Objekt wird dann mit requests.post() an den Handle-Server gesendet.
-Wenn die POST-Anfrage erfolgreich ist, wird die neue Handle-ID im METS-Dokument eingefügt und das Dokument gespeichert.
-Für jedes "version" DIV wird ein JSON-Objekt mit Hilfe des vh-Moduls erstellt und mit requests.put() an den Handle-Server gesendet.
+Das METS-Dokument wird mit lxml.etree geparsed und das structMap-Element wird gefunden, 
+um die Liste der "cinematographicWork" und "version" DIVs zu erstellen. Für jedes 
+"cinematographicWork" DIV wird eine Handle-ID generiert und ein JSON-Objekt mit 
+Hilfe des xj-Moduls erstellt. Dieses Objekt wird dann mit requests.post() an den 
+Handle-Server gesendet. Wenn die POST-Anfrage erfolgreich ist, wird die neue Handle-ID 
+im METS-Dokument eingefügt und das Dokument gespeichert. Für jedes "version" DIV wird 
+ein JSON-Objekt mit Hilfe des vh-Moduls erstellt und mit requests.put() an den 
+Handle-Server gesendet.
 
 '''
 def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
