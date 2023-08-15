@@ -222,9 +222,11 @@ def getCountries_of_reference(dmdsec,ns):
             except LookupError:
                 helpers.logger.error('WORK: countryOfReference "'+landstring+'" not found by pycountry')
             else:
+                country_hits =  [x for x in res if x is not None]
                 helpers.logger.error('WORK: countryOfReference "'+landstring+'" found as "' 
-                                     + res[0].alpha_2 + '" but might not be correct')
-                landlist.append(res[0].alpha_2)
+                                     + country_hits[0].alpha_2 + '" but might not be correct')
+                
+                landlist.append(country_hits[0].alpha_2)
                 check_historic = False
             if check_historic:
                 try:
@@ -232,9 +234,10 @@ def getCountries_of_reference(dmdsec,ns):
                 except LookupError:
                     helpers.logger.error('WORK: countryOfReference "'+landstring+'" not found by pycountry historic')
                 else:
+                    country_hits =  [x for x in res if x is not None]
                     helpers.logger.error('WORK: countryOfReference "'+landstring+'" found as "' 
-                                     + res[0].alpha_2 + '" but might not be correct')
-                    landlist.append(res[0].alpha_2)
+                                     + country_hits[0].alpha_2 + '" but might not be correct')
+                    landlist.append(country_hits[0].alpha_2)
 
     return {'type': 'countryOfReference', 'parsed_data': landlist}
 
