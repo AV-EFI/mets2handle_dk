@@ -20,7 +20,7 @@ def getEnumFromType(datatype):
     url = baseurl + datatype
     response = urlopen(url)
     typedata = json.loads(response.read())
-    return typedata['properties'][0]['enum']
+    return json.loads(typedata['properties'][0]['enum'])
 
 def getDAtaObejctPidsFrom_Versionhandle(pidOfVersion:str,url:str,user:str,password:str):
 
