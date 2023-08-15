@@ -25,6 +25,7 @@ __version__ = "3.0"
 from lxml import etree as ET
 import uuid
 import helpers
+import pycountry
 
 def getIdentifier(pid_work:str):
     """
@@ -201,29 +202,53 @@ def getOriginal_language(dmdsec,ns):
 
 def getCountries_of_reference(dmdsec,ns):
     """
-    Findet ursprungsland
-    TODO:
-    Unklar ob es mehrere urspunrgsländer geben kann
-    es muss unbedingt die länder liste geändert werden
+    Findet Ursprungsland
     """
-    land = []
+    landlist = []
     for country in dmdsec.findall('.//ebucore:location', ns):
-        land.append(country.find('.//ebucore:name', ns).text)
+        landstring = str(country.find('.//ebucore:name', ns).text)
+        # Try to find country name in the database
+        if pycountry.countries.get(name=landstring) != None:
+            landlist.append(pycountry.countries.get(name=landstring).aplha_2)
+        elif pycountry.countries.get(official_name=landstring) != None:
+            landlist.append(pycountry.countries.get(official_name=landstring).aplha_2)
+        elif pycountry.historic_countries.get(name=landstring) != None:
+            landlist.append(pycountry.historic_countries.get(name=landstring).aplha_2)  
+        else:
+        # As everything failed use fuzzy search and log the information
+            check_historic = True
+            try:
+                res = pycountry.countries.search_fuzzy(landstring)
+            except LookupError:
+                helpers.logger.error('WORK: countryOfReference "'+landstring+'" not found by pycountry')
+            else:
+                helpers.logger.error('WORK: countryOfReference "'+landstring+'" found as "' 
+                                     + res[0].alpha_2 + '" but might not be correct')
+                landlist.append(res[0].alpha_2)
+                check_historic = False
+            if check_historic:
+                try:
+                    res = pycountry.historic_countries.search_fuzzy(landstring)
+                except LookupError:
+                    helpers.logger.error('WORK: countryOfReference "'+landstring+'" not found by pycountry historic')
+                else:
+                    helpers.logger.error('WORK: countryOfReference "'+landstring+'" found as "' 
+                                     + res[0].alpha_2 + '" but might not be correct')
+                    landlist.append(res[0].alpha_2)
 
-    if  not len(land):
-        return None
-    return{'type': 'countryOfReference', 'parsed_data': land}
+    return {'type': 'countryOfReference', 'parsed_data': landlist}
 
 def getYears_of_reference(dmdsec,ns):#wird eventuell noch abgeändert
     """
-    Findet den Erstellsungszeitraum hier Benannt year of reference
+    Findet den Erstellsungszeitraum hier benannt year of reference
     21.T11148/089d6db63cf69c35930d
     """
+    yearOfReferenceTypes = helpers.getEnumFromType('21.T11148/03dfc92c55cea3e18920')
 
     years = [{'startYear': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear"),
              'endYear': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("endYear"),
              'referenceType':'created'}]# referenceType nicht gegeben aber immer created ?
-
+    
     return {'type': 'yearOfReference','parsed_data':years}
 
 def getRelated_identifier(dmdsec,ns):#was bedeute das comment?
@@ -258,12 +283,7 @@ def getGenre(dmdsec,ns):
 def getOriginal_format(dmdsec,ns):
     """
     Gibt das Format zurück, auf welchem der Film gespeichert wurde
-    21.T11148/cda76378eeb3ce51a3ff
-    TODO:
-    Noch unklar, wo in der XML Datei das zu finden ist
     """
-    
-
     format ='' # wo zu finden? was ist gemeint ?
     format_Sec =dmdsec.find('.//ebucore:format',ns)
     if format_Sec !=None:#
@@ -275,7 +295,7 @@ def getOriginal_format(dmdsec,ns):
     return {'type': 'originalFormat','parsed_data':format}
 
 
-#build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann. Standarmäßig
+#build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann. 
 def buildWorkJson(dmdsec, ns,pid_work,handleId=True,title=True,series=False,credit=False,cast=True,
 original_duration=True,Source=True,source_identifier=False,last_modifed=True,production_companies=True,
 countries_of_reference=True,original_language=False,years_of_reference=True,
@@ -332,7 +352,6 @@ related_identifier=True,original_format=True,genre=True):
     if related_identifier:
         values.append(getRelated_identifier(dmdsec,ns))
 
-
     if original_format:
         values.append(getOriginal_format(dmdsec,ns))
 
@@ -345,12 +364,6 @@ related_identifier=True,original_format=True,genre=True):
 
     return json
 
-
-
-
-
-
-
 def create_identifier_element(pid):
 
    ebuident = ET.Element('{urn:ebu:metadata-schema:ebucore}identifier',)
@@ -361,6 +374,3 @@ def create_identifier_element(pid):
    dcident.text = '\n                    '+pid+'\n              '
    dcident.tail = '         \n            '       
    return ebuident
-
-
-
