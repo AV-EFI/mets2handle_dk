@@ -2,7 +2,7 @@
 This module implements the creation of the PID records for the manifestion/version.
 
 It is designed to map the values from the METS XML files to the required values.
-For that each function is a mapping which searches for the value in a section 
+For that each function is a mapping which searches for the value in a section
 of the METS file and puts it in a dictionary which has the format of:
 {
     type:<value that is defined in the handle>,
@@ -10,9 +10,9 @@ of the METS file and puts it in a dictionary which has the format of:
 }
 
 The function buildVersionJson is there to call all the defined functions and
-put them into a format, so that the JSON library can convert the dictionary into 
-a JSON file that is accepted by the PID system. It is possible to deselect values 
-that one does not want in the json and therefore will not be sent to the 
+put them into a format, so that the JSON library can convert the dictionary into
+a JSON file that is accepted by the PID system. It is possible to deselect values
+that one does not want in the json and therefore will not be sent to the
 PID system.
 
 The Metadata follow the definitions of
@@ -41,7 +41,7 @@ def getIdentifier(workPid:str):
     #identifier= dmdsec.find('.//ebucore:identifiert',ns).find('.//dc:identifier',ns).text
     return {'type':'identifier','parsed_data':workPid.upper()}
 
-def isVersionof(pids_of_works):
+def isVersionOf(pids_of_works):
     '''
     21.T11148/ef19de26cec8cae78ceb
     Mandatory,repeatable
@@ -54,7 +54,7 @@ def hasDataObject(dataobjectpid:list):
     #geht davon aus, dass es nur ein dataobject pro mets gibt!
     for dataobject in dataobjectpid:
         dataobject=dataobject.upper()
-    
+    #
     if not isinstance(dataobjectpid,list):
         dataobjectpid = [dataobjectpid]
     return {'type':'has_data_objects','parsed_data':dataobjectpid}
@@ -64,19 +64,21 @@ def sameAs(dmdsec,ns):
     return {'type':'same_as','parsed_data':objects}
 
 def titles(dmdsec,ns):
-    titles=[]
-    titletypen = ['Original Title', 'Release Title', 'Archive Title', 'Alternative Title', 'Sort Title']
-    for title in dmdsec.findall(".//dc:title", ns):
-        if title.find('..').get('typeLabel') not in titletypen :
+    # Allowed titles are at the moment equal to the titles used in "work"
+    # Thus it is the same function as in db_works_to_handle
+    titlelist = []
+    titletypes = helpers.getEnumFromType('21.T11148/2f4e516fbdfa40a52453')
 
-            titletype='Other'
-        else:
-            titletype=title.find('..').get('typeLabel')
-        titles.append({'titleValue':title.text, 'titleType':titletype})
-    title = {'type': 'titles',#21.T11148/4b18b74f5ed1441bc6a3
-             'parsed_data':
-             titles}
-    return title
+    for title in dmdsec.findall(".//dc:title", ns):
+        titlestring = str(title.find('..').get('typeLabel'))
+        try:
+            titlelist.append({'titleValue':title.text, 'titleType':helpers.vocab_map[titlestring]})
+        except KeyError:
+            helpers.logger.error('WORK: Titel Type "'+titlestring+'" not in vocab_map.json')
+        # If already mapped:
+        if titlestring in titletypes:
+            titlelist.append({'titleValue':title.text, 'titleType':titlestring})
+    return {'type': 'title','parsed_data': titlelist}
 
 def releaseDate(dmdsec,ns):
     # Release data has to be given in YYYY-MM-DD
@@ -89,9 +91,9 @@ def releaseDate(dmdsec,ns):
     releasedate=releasedate+'-01-01'
     return({'type':'release_date','parsed_data':releasedate})
 
-def getYears_of_reference(dmdsec,ns):
+def getYearsOfReference(dmdsec,ns):
     """
-    Findet den Erstellsungszeitraum hier Benannt year of reference
+    Findet den Erstellsungszeitraum hier benannt year of reference
     21.T11148/089d6db63cf69c35930d
     """
     #years = [{'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear")},
@@ -100,18 +102,22 @@ def getYears_of_reference(dmdsec,ns):
         year=dmdsec.find('.//ebucore:date//ebucore:created',ns).get('startYear')
         return {'type': 'production_year','parsed_data':year}
     else:
+        helpers.logger.error('VERSION: yearOfReference not found')
         return None
 
 def getManifestationType(dmdsec,ns):
     # Implements: 21.T11148/c72633267da87f952971
-    types=[]
+    typelist =  []
+    manifestationTypes=helpers.getEnumFromType('21.T11148/567d070dfa708072819b')
+    #
     for type in dmdsec.findall('.//ebucore:type//ebucore:objectType',ns):
-        type_=type.get('typeLabel')
-        if type_ in ['Broadcast', 'Home viewing publication', 'Internet', 'Theatrical distribution', 'Unreleased', 'Non-theatrical distribution', 'Not for release', 'Pre-Release', 'Preservation/Restoration', 'Unknown']:
-            types.append(type_)
+        typestring = type.get('typeLabel')
+        if typestring in manifestationTypes:
+            typelist.append(typestring)
         else:
-            types.append('Unknown')
-    return {'type':'manifestation_types','parsed_data':types}
+            helpers.logger.error('VERSION: manifestationType "'+typestring+'" not in the list')
+            typelist.append('Unknown')
+    return {'type':'manifestation_types','parsed_data':typelist}
 
 def getHasAgent(dmdsec,ns):
     # Implements: 21.T11148/5a69721cca16545c03e6
@@ -148,13 +154,12 @@ def getLast_modified(dmdsec,ns):
 
 def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,lastModified=True,Sources=True,HasAgent=True,ManfiestationType=True,YearsofReference=True,releasedate=True,sameas=True,title=False, DataObject=True,VerisonOf=True,identifier=True):
     json=dict()
-    valuedict=dict()
     values=[]
     #if identifier:
        # values.append(getIdentifier(version_pid))
 
     if VerisonOf:
-        values.append(isVersionof(pid_works))
+        values.append(isVersionOf(pid_works))
 
     if DataObject:
         values.append(hasDataObject(dataobject_pid))
@@ -169,7 +174,7 @@ def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,l
         values.append(releaseDate(dmdsec,ns))
 
     if YearsofReference:
-        values.append(getYears_of_reference(dmdsec,ns))
+        values.append(getYearsOfReference(dmdsec,ns))
 
     if ManfiestationType:
         values.append(getManifestationType(dmdsec,ns))
@@ -183,7 +188,8 @@ def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,l
     if lastModified:
         values.append(getLast_modified(dmdsec,ns))
 
-    values.append({'type':'KernelInformationProfile','parsed_data':'21.T11148/ef6836b80e4d64e574e3'}) #version 0.1
+    values.append({'type':'KernelInformationProfile',
+                   'parsed_data':'21.T11148/ef6836b80e4d64e574e3'})
 
     json= [value for value in values if value is not None]
 
