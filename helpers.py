@@ -15,7 +15,7 @@ vocab_map = json.load(vocab_map_file)
 Module to implement helper funktions to keept the code organized and less complex in metstohandle.py
 '''
 
-def getEnumFromType(datatype):
+def getEnumFromType(datatype: str) -> list[str]:
     baseurl = "https://dtr-test.pidconsortium.net/objects/"
     url = baseurl + datatype
     response = urlopen(url)
