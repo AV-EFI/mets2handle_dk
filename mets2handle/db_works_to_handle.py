@@ -94,17 +94,17 @@ def getCredits(dmdsec,ns):
 
                 if contributor.find('.//ebucore:contactDetails',ns).get('contactId') != None: #checktob es eine uri gibt
                     credits.append({
-                        'identifier':{'identifier':contributor.find('.//ebucore:contactDetails',ns).get('contactId').split('/')[-1],'identifier_uri':contributor.find('.//ebucore:contactDetails',ns).get('contactId')
-
-                                      }
-                        ,'name':{'family-name':name[0],'given-name':name[1].strip()},'role':str(role.get('typeLabel')).capitalize()
-
+                        'identifier':{'identifier':contributor.find('.//ebucore:contactDetails',ns).get('contactId').split('/')[-1],
+                                      'identifier_uri':contributor.find('.//ebucore:contactDetails',ns).get('contactId')},                
+                        'name':{'family-name':name[0],
+                                 'given-name':name[1].strip()},
+                                 'role':str(role.get('typeLabel')).capitalize()
                         })
                 else:
                     credits.append({
-
-                        'name':{'family-name':name[0],'given-name':name[1].strip()},'role':role.get('typeLabel').capitalize()
-
+                        'name':{'family-name':name[0],
+                                'given-name':name[1].strip()},
+                                'role':role.get('typeLabel').capitalize()
                         })
 
 
@@ -361,7 +361,8 @@ related_identifier=True,original_format=True,genre=True):
     if genre:
         values.append(getGenre(dmdsec,ns))
 
-    values.append({'type':'KernelInformationProfile','parsed_data':'21.T11148/31b848e871121c47d064'}) #version 0.1
+    values.append({'type':'KernelInformationProfile',
+                   'parsed_data':'21.T11148/31b848e871121c47d064'})
 
     json=[value for value in values if value is not None]
 
