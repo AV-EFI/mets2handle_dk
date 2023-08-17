@@ -25,11 +25,7 @@ __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
 
-import xml.etree.ElementTree as ET
-import sys
-import requests
-import uuid
-import helpers
+from mets2handle import helpers
 
 ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
 
@@ -72,9 +68,9 @@ def titles(dmdsec,ns):
     for title in dmdsec.findall(".//dc:title", ns):
         titlestring = str(title.find('..').get('typeLabel'))
         try:
-            titlelist.append({'titleValue':title.text, 'titleType':helpers.vocab_map[titlestring]})
+            titlelist.append({'titleValue':title.text, 'titleType': helpers.vocab_map[titlestring]})
         except KeyError:
-            helpers.logger.error('WORK: Titel Type "'+titlestring+'" not in vocab_map.json')
+            helpers.logger.error('WORK: Titel Type "' + titlestring + '" not in vocab_map.json')
         # If already mapped:
         if titlestring in titletypes:
             titlelist.append({'titleValue':title.text, 'titleType':titlestring})
@@ -108,14 +104,14 @@ def getYearsOfReference(dmdsec,ns):
 def getManifestationType(dmdsec,ns):
     # Implements: 21.T11148/c72633267da87f952971
     typelist =  []
-    manifestationTypes=helpers.getEnumFromType('21.T11148/567d070dfa708072819b')
+    manifestationTypes= helpers.getEnumFromType('21.T11148/567d070dfa708072819b')
     #
     for type in dmdsec.findall('.//ebucore:type//ebucore:objectType',ns):
         typestring = type.get('typeLabel')
         if typestring in manifestationTypes:
             typelist.append(typestring)
         else:
-            helpers.logger.error('VERSION: manifestationType "'+typestring+'" not in the list')
+            helpers.logger.error('VERSION: manifestationType "' + typestring + '" not in the list')
             typelist.append('Unknown')
     return {'type':'manifestation_types','parsed_data':typelist}
 
