@@ -27,7 +27,7 @@ from mets2handle import helpers
 import pycountry
 
 
-def getIdentifier(pid_work: str):
+def getIdentifier(pid_work: str) -> dict[str]:
     """
     DTR: 21.T11148/fae9fd39301eb7e657d4
     """
@@ -317,7 +317,7 @@ def getOriginal_format(dmdsec, ns):
 
 
 # build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann.
-def buildWorkJson(dmdsec, ns, pid_work, handleId=True, title=True, series=False, credit=False, cast=True,
+def buildWorkJson(dmdsec, ns: dict[str,str], pid_work, handleId=True, title=True, series=False, credit=False, cast=True,
                   original_duration=True, Source=True, source_identifier=False, last_modifed=True,
                   production_companies=True,
                   countries_of_reference=True, original_language=False, years_of_reference=True,
@@ -388,7 +388,7 @@ def buildWorkJson(dmdsec, ns, pid_work, handleId=True, title=True, series=False,
     return json
 
 
-def create_identifier_element(pid):
+def create_identifier_element(pid: str):
     ebuident = ET.Element('{urn:ebu:metadata-schema:ebucore}identifier', )
     ebuident.attrib['formatLabel'] = 'hdl.handle.net'
 

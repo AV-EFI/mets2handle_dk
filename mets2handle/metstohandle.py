@@ -9,18 +9,17 @@ __version__ = "3.0"
 from typing import Text
 from lxml import etree as ET
 import json
-from requests.api import get , put
+from requests.api import get, put
 import sys
-import urllib.request ,urllib.error , urllib.parse
+import urllib.request, urllib.error, urllib.parse
 import requests
-#import db_works_to_handle as xj
-#import .db_version_to_handle as vh
-#import .db_data_object_to_handle as oh
+# import db_works_to_handle as xj
+# import .db_version_to_handle as vh
+# import .db_data_object_to_handle as oh
 import uuid
 from pathlib import Path
 
 import mets2handle
-
 
 '''
 Vollständige Menschen am Sonntag Handle unter handle id 21.T11998/0412EF68-FC59-4240-9D5D-EEA25F083873
@@ -65,11 +64,13 @@ ein JSON-Objekt mit Hilfe des vh-Moduls erstellt und mit requests.put() an den
 Handle-Server gesendet.
 
 '''
-def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
-        ,dumpjsons=True):
-# dumpjsons=True  set to false if you wish not to have the jsons that are sent to the handle server beeing outputted into this directory
 
-# Read credentials for the ePIC PID service
+
+def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
+        , dumpjsons=True):
+    # dumpjsons=True  set to false if you wish not to have the jsons that are sent to the handle server beeing outputted into this directory
+
+    # Read credentials for the ePIC PID service
     connection_details = {}
 
     print(Path.cwd())
@@ -78,29 +79,32 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
             for line in f:
                 key, value = line.strip().split("|")
                 connection_details[key] = value
-    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
+    except EnvironmentError:  # parent of IOError, OSError *and* WindowsError where available
         print('Please make sure that handle_connection.txt is in the same folder')
 
-    header = {'accept': 'application/json', 'If-None-Match': 'default','If-Match': 'default', 'Content-Type': 'application/json'}
-    
-    multiworkno=0 # counter to ennumarate the files that result from the json dump for multiworks
+    header = {'accept': 'application/json', 'If-None-Match': 'default', 'If-Match': 'default',
+              'Content-Type': 'application/json'}
+
+    multiworkno = 0  # counter to ennumarate the files that result from the json dump for multiworks
 
     # Defining namespace dictionary to be used later in the code to access XML data
-    ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
-    parser=ET.XMLParser(remove_comments=False)
+    ns = {"mets": "http://www.loc.gov/METS/", "xlink": "http://www.w3.org/1999/xlink",
+          "xsi": "http://www.w3.org/2001/XMLSchema-instance", "ebucore": "urn:ebu:metadata-schema:ebucore",
+          "dc": "http://purl.org/dc/elements/1.1/"}
+    parser = ET.XMLParser(remove_comments=False)
 
     try:
-        xml_tree = ET.parse(filename,parser=parser)
+        xml_tree = ET.parse(filename, parser=parser)
     except IndexError:
         raise SystemExit(f"Usage: {sys.argv[0]} <path_to_XML_file>")
 
-    root=xml_tree.getroot()
+    root = xml_tree.getroot()
     struct = xml_tree.find('.//mets:structMap', ns)
 
     # Create empty lists for the DMDIDs of cinematographic works, versions, and data objects
     cinematographic_works = []
     versions = []
-    dataobjects=[]
+    dataobjects = []
 
     # Loop through the structure map of the METS file and find the DMDIDs of cinematographic works, versions, and data objects
     # TODO: Make sure only on valid TYPE is given in the mets file
@@ -113,130 +117,138 @@ def m2h(filename,credentials='./mets2handle/credentials/handle_connection.txt'
         if type == 'version':
             versions.append(div.get('DMDID'))
 
-        if type=='dataObject':
+        if type == 'dataObject':
             dataobjects.append(div.get('DMDID'))
 
-
     # empty list to hold PIDs of cinematographic works
-    cinematographic_work_pids=[]
+    cinematographic_work_pids = []
 
     # generate a new UUID to use as the PID for the data object
     # has to be done here so we have it already when we get to
     # the Version object where the entry for the PID of a dataobject is needed
-    dataobject_Uid=str(uuid.uuid4())
-    dataobject_Pid=connection_details['prefix']+'/{}'.format(dataobject_Uid)
+    dataobject_Uid = str(uuid.uuid4())
+    dataobject_Pid = connection_details['prefix'] + '/{}'.format(dataobject_Uid)
 
-    for dmdsec in xml_tree.findall('.//mets:dmdSec',ns):
+    for dmdsec in xml_tree.findall('.//mets:dmdSec', ns):
 
         # If the ID attribute of the dmdSec element is in the list of cinematographic works,
         # generate a new UUID to use as the PID for the work, generate the JSON for the work,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the work
         if dmdsec.get('ID') in cinematographic_works:
             # TODO: hier abfrage, ob Werk bereits PID hat
-            uid=str(uuid.uuid4())
-            cinematographic_work_pid=connection_details['prefix']+'/{}'.format(str(uid))
+            uid = str(uuid.uuid4())
+            cinematographic_work_pid = connection_details['prefix'] + '/{}'.format(str(u))
             cinematographic_work_pids.append(cinematographic_work_pid.upper())
 
             if dumpjsons:
-                json.dump(mets2handle.buildWorkJson(dmdsec, ns,pid_work= cinematographic_work_pid), open(str(multiworkno)+'handlejson.json', 'w', encoding='utf8'),
-                indent=4, sort_keys=False,ensure_ascii=False)
+                json.dump(mets2handle.buildWorkJson(dmdsec, ns, pid_work=cinematographic_work_pid),
+                          open(str(multiworkno) + 'handlejson.json', 'w', encoding='utf8'),
+                          indent=4, sort_keys=False, ensure_ascii=False)
 
-            payload = mets2handle.buildWorkJson(root, ns,pid_work=cinematographic_work_pid, original_duration=False,  related_identifier=False,original_format=False )
+            payload = mets2handle.buildWorkJson(root, ns, pid_work=cinematographic_work_pid, original_duration=False,
+                                                related_identifier=False, original_format=False)
             print('CREATE PID FOR WORK -----------------------')
-            response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
-            print(response_from_handle_server.status_code,response_from_handle_server.text)
+            response_from_handle_server = requests.put(connection_details['url'] + uid, auth=(
+            connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+            print(response_from_handle_server.status_code, response_from_handle_server.text)
 
-            respon=json.loads(response_from_handle_server.text)
-            multiworkno=multiworkno+1
-            if response_from_handle_server.status_code==201:
-                #gets pid from response
-                pid=respon['handle']
+            respon = json.loads(response_from_handle_server.text)
+            multiworkno = multiworkno + 1
+            if response_from_handle_server.status_code == 201:
+                # gets pid from response
+                pid = respon['handle']
 
-                #writes new PID into the mets file
-                new_ident= mets2handle.create_identifier_element(pid)
+                # writes new PID into the mets file
+                new_ident = mets2handle.create_identifier_element(pid)
 
-                new_ident.text='\n              '
-                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+                new_ident.text = '\n              '
+                dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).addprevious(new_ident)
+                dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
-                new_tree=ET.tostring(xml_tree,pretty_print=True)
-                with open (filename,'wb') as metsfile:
+                new_tree = ET.tostring(xml_tree, pretty_print=True)
+                with open(filename, 'wb') as metsfile:
 
-                    baum=ET.ElementTree(root)
-                    baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                    baum = ET.ElementTree(root)
+                    baum.write(metsfile, xml_declaration=True, encoding='utf-8')
                     metsfile.close
             else:
 
-                print(response_from_handle_server.status_code,respon)
+                print(response_from_handle_server.status_code, respon)
 
         # if the ID attribute of the dmdSec element is in the list of versions,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the version
         if dmdsec.get('ID') in versions:
             # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
-            uid=str(uuid.uuid4())
-            version_pid=connection_details['prefix']+'/{}'.format(str(uid))
+            uid = str(uuid.uuid4())
+            version_pid = connection_details['prefix'] + '/{}'.format(str(uid))
             if dumpjsons:
-                json.dump(mets2handle.buildVersionJson(dmdsec, ns,pid_works= cinematographic_work_pids,dataobject_pid=dataobject_Pid,version_pid= version_pid), open('version.json', 'w', encoding='utf8'),
-                indent=4, sort_keys=False,ensure_ascii=False)
+                json.dump(mets2handle.buildVersionJson(dmdsec, ns, pid_works=cinematographic_work_pids,
+                                                       dataobject_pid=dataobject_Pid, version_pid=version_pid),
+                          open('version.json', 'w', encoding='utf8'),
+                          indent=4, sort_keys=False, ensure_ascii=False)
 
-            payload = mets2handle.buildVersionJson(root, ns,pid_works=cinematographic_work_pids,dataobject_pid= dataobject_Pid,version_pid=version_pid )
+            payload = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
+                                                   dataobject_pid=dataobject_Pid, version_pid=version_pid)
             print('CREATE PID FOR VERSION -----------------------')
-            response_from_handle_server = requests.put(connection_details['url']+uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
-            #print(response_from_handle_server.text,response_from_handle_server.status_code)
+            response_from_handle_server = requests.put(connection_details['url'] + uid, auth=(
+            connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+            # print(response_from_handle_server.text,response_from_handle_server.status_code)
 
-            if response_from_handle_server.status_code==201:
-                #gets pid from response
-                respon=json.loads(response_from_handle_server.text)
-                pid=respon['handle']
+            if response_from_handle_server.status_code == 201:
+                # gets pid from response
+                respon = json.loads(response_from_handle_server.text)
+                pid = respon['handle']
 
-                #writes new PID into the mets file
-                new_ident= mets2handle.create_identifier_element(pid)
+                # writes new PID into the mets file
+                new_ident = mets2handle.create_identifier_element(pid)
 
-                new_ident.text='\n              '
-                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).tail='\n\n            '
+                new_ident.text = '\n              '
+                dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).addprevious(new_ident)
+                dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
-                new_tree=ET.tostring(xml_tree,pretty_print=True)
-                with open (filename,'wb') as metsfile:
+                new_tree = ET.tostring(xml_tree, pretty_print=True)
+                with open(filename, 'wb') as metsfile:
 
-                    baum=ET.ElementTree(root)
-                    baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                    baum = ET.ElementTree(root)
+                    baum.write(metsfile, xml_declaration=True, encoding='utf-8')
                     metsfile.close
-            elif response_from_handle_server.status_code==400:
+            elif response_from_handle_server.status_code == 400:
                 print('Wrongly formatted request')
                 print(payload)
             else:
                 print('Unkown Error. Please debug the code!')
 
-            respon=json.loads(response_from_handle_server.text)
+            respon = json.loads(response_from_handle_server.text)
         # if the ID attribute of the dmdSec element is in the list of cinematographic works,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the work,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the work
         if dmdsec.get('ID') in dataobjects:
-            json.dump(mets2handle.buildData_Object_Json(dmdsec, ns , dataobject_Pid,version_pid), open('dataobject.json', 'w', encoding='utf8'),
-                indent=4, sort_keys=False,ensure_ascii=False)
+            json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid),
+                      open('dataobject.json', 'w', encoding='utf8'),
+                      indent=4, sort_keys=False, ensure_ascii=False)
 
-            payload=mets2handle.buildData_Object_Json(dmdsec, ns,dataobject_Pid,version_pid)
+            payload = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
 
             print('CREATE PID FOR DATA OBJECT -----------------------')
-            response_from_handle_server = requests.put(connection_details['url']+dataobject_Uid, auth=(connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
+            response_from_handle_server = requests.put(connection_details['url'] + dataobject_Uid, auth=(
+            connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
-            print(response_from_handle_server.text,response_from_handle_server.status_code)
-            if response_from_handle_server.status_code==201:
-                respon=json.loads(response_from_handle_server.text)
-                pid=respon['handle']
+            print(response_from_handle_server.text, response_from_handle_server.status_code)
+            if response_from_handle_server.status_code == 201:
+                respon = json.loads(response_from_handle_server.text)
+                pid = respon['handle']
 
-                #writes new PID into the mets file
-                new_ident= mets2handle.create_identifier_element(pid)
+                # writes new PID into the mets file
+                new_ident = mets2handle.create_identifier_element(pid)
 
-                new_ident.text='\n              '
-                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier',ns).addprevious(new_ident)
-                dmdsec.find('.//ebucore:coreMetadata',ns).find('ebucore:identifier', ns).tail='\n\n            '
+                new_ident.text = '\n              '
+                dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).addprevious(new_ident)
+                dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
-                new_tree=ET.tostring(xml_tree,pretty_print=True)
-                with open (filename,'wb') as metsfile:
-                    baum=ET.ElementTree(root)
-                    baum.write(metsfile, xml_declaration=True,encoding='utf-8')
+                new_tree = ET.tostring(xml_tree, pretty_print=True)
+                with open(filename, 'wb') as metsfile:
+                    baum = ET.ElementTree(root)
+                    baum.write(metsfile, xml_declaration=True, encoding='utf-8')
                     metsfile.close
-    return True # if successfull
+    return True  # if successfull

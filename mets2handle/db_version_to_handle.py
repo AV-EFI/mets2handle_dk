@@ -27,15 +27,19 @@ __version__ = "3.0"
 
 from mets2handle import helpers
 
-ns = {"mets":"http://www.loc.gov/METS/", "xlink":"http://www.w3.org/1999/xlink","xsi":"http://www.w3.org/2001/XMLSchema-instance","ebucore":"urn:ebu:metadata-schema:ebucore", "dc":"http://purl.org/dc/elements/1.1/"}
+ns = {"mets": "http://www.loc.gov/METS/", "xlink": "http://www.w3.org/1999/xlink",
+      "xsi": "http://www.w3.org/2001/XMLSchema-instance", "ebucore": "urn:ebu:metadata-schema:ebucore",
+      "dc": "http://purl.org/dc/elements/1.1/"}
 
-def getIdentifier(workPid:str):
+
+def getIdentifier(workPid: str):
     '''
     21.T11148/fae9fd39301eb7e657d4
     '''
-    #work_pid='21.T11148/{}'.format(str(uuid.uuid4()))
-    #identifier= dmdsec.find('.//ebucore:identifiert',ns).find('.//dc:identifier',ns).text
-    return {'type':'identifier','parsed_data':workPid.upper()}
+    # work_pid='21.T11148/{}'.format(str(uuid.uuid4()))
+    # identifier= dmdsec.find('.//ebucore:identifiert',ns).find('.//dc:identifier',ns).text
+    return {'type': 'identifier', 'parsed_data': workPid.upper()}
+
 
 def isVersionOf(pids_of_works):
     '''
@@ -43,23 +47,27 @@ def isVersionOf(pids_of_works):
     Mandatory,repeatable
     enthält die PID(s) vom Werk
     '''
-    versions=pids_of_works
-    return {'type':'is_version_of','parsed_data':versions}
+    versions = pids_of_works
+    return {'type': 'is_version_of', 'parsed_data': versions}
 
-def hasDataObject(dataobjectpid:list):
-    #geht davon aus, dass es nur ein dataobject pro mets gibt!
+
+def hasDataObject(dataobjectpid: list):
+    # geht davon aus, dass es nur ein dataobject pro mets gibt!
     for dataobject in dataobjectpid:
-        dataobject=dataobject.upper()
+        dataobject = dataobject.upper()
     #
-    if not isinstance(dataobjectpid,list):
+    if not isinstance(dataobjectpid, list):
         dataobjectpid = [dataobjectpid]
-    return {'type':'has_data_objects','parsed_data':dataobjectpid}
+    return {'type': 'has_data_objects', 'parsed_data': dataobjectpid}
 
-def sameAs(dmdsec,ns):
-    objects=['21.T11148/ef19de26cec8cae78ceb']#platzhalter pid auf same_as Registry -> aktuell nicht im mets zu finden
-    return {'type':'same_as','parsed_data':objects}
 
-def titles(dmdsec,ns):
+def sameAs(dmdsec, ns):
+    objects = [
+        '21.T11148/ef19de26cec8cae78ceb']  # platzhalter pid auf same_as Registry -> aktuell nicht im mets zu finden
+    return {'type': 'same_as', 'parsed_data': objects}
+
+
+def titles(dmdsec, ns):
     # Allowed titles are at the moment equal to the titles used in "work"
     # Thus it is the same function as in db_works_to_handle
     titlelist = []
@@ -68,69 +76,78 @@ def titles(dmdsec,ns):
     for title in dmdsec.findall(".//dc:title", ns):
         titlestring = str(title.find('..').get('typeLabel'))
         try:
-            titlelist.append({'titleValue':title.text, 'titleType': helpers.vocab_map[titlestring]})
+            titlelist.append({'titleValue': title.text, 'titleType': helpers.vocab_map[titlestring]})
         except KeyError:
             helpers.logger.error('WORK: Titel Type "' + titlestring + '" not in vocab_map.json')
         # If already mapped:
         if titlestring in titletypes:
-            titlelist.append({'titleValue':title.text, 'titleType':titlestring})
-    return {'type': 'title','parsed_data': titlelist}
+            titlelist.append({'titleValue': title.text, 'titleType': titlestring})
+    return {'type': 'title', 'parsed_data': titlelist}
 
-def releaseDate(dmdsec,ns):
+
+def releaseDate(dmdsec, ns):
     # Release data has to be given in YYYY-MM-DD
     try:
-        releasedate=dmdsec.find('.//ebucore:date//ebucore:released',ns).get('year')
+        releasedate = dmdsec.find('.//ebucore:date//ebucore:released', ns).get('year')
     except AttributeError:
         helpers.logger.error('VERSION: No release date found')
-        releasedate='1000'
+        releasedate = '1000'
     # if only year is given, we apped -01-01
-    releasedate=releasedate+'-01-01'
-    return({'type':'release_date','parsed_data':releasedate})
+    releasedate = releasedate + '-01-01'
+    return ({'type': 'release_date', 'parsed_data': releasedate})
 
-def getYearsOfReference(dmdsec,ns):
+
+def getYearsOfReference(dmdsec, ns):
     """
     Findet den Erstellsungszeitraum hier benannt year of reference
     21.T11148/089d6db63cf69c35930d
     """
-    #years = [{'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear")},
+    # years = [{'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear")},
     #         {'year_of_reference': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("endYear")}]
-    if dmdsec.find('.//ebucore:date//ebucore:created',ns) != None:
-        year=dmdsec.find('.//ebucore:date//ebucore:created',ns).get('startYear')
-        return {'type': 'production_year','parsed_data':year}
+    if dmdsec.find('.//ebucore:date//ebucore:created', ns) != None:
+        year = dmdsec.find('.//ebucore:date//ebucore:created', ns).get('startYear')
+        return {'type': 'production_year', 'parsed_data': year}
     else:
         helpers.logger.error('VERSION: yearOfReference not found')
         return None
 
-def getManifestationType(dmdsec,ns):
+
+def getManifestationType(dmdsec, ns):
     # Implements: 21.T11148/c72633267da87f952971
-    typelist =  []
-    manifestationTypes= helpers.getEnumFromType('21.T11148/567d070dfa708072819b')
+    typelist = []
+    manifestationTypes = helpers.getEnumFromType('21.T11148/567d070dfa708072819b')
     #
-    for type in dmdsec.findall('.//ebucore:type//ebucore:objectType',ns):
+    for type in dmdsec.findall('.//ebucore:type//ebucore:objectType', ns):
         typestring = type.get('typeLabel')
         if typestring in manifestationTypes:
             typelist.append(typestring)
         else:
             helpers.logger.error('VERSION: manifestationType "' + typestring + '" not in the list')
             typelist.append('Unknown')
-    return {'type':'manifestation_types','parsed_data':typelist}
+    return {'type': 'manifestation_types', 'parsed_data': typelist}
 
-def getHasAgent(dmdsec,ns):
+
+def getHasAgent(dmdsec, ns):
     # Implements: 21.T11148/5a69721cca16545c03e6
-    data=[]
-    for companie in dmdsec.findall('.//ebucore_contributor',ns):
-        data.append({'name':companie.find('.//ebucore:organisationDetails//ebucore:organisationName',ns).text,'identifier_uri':companie.find('.//ebucore:organisationDetails',ns).get('organisationID')})
-    return {'type':'has_agent','parsed_data':data}
+    data = []
+    for companie in dmdsec.findall('.//ebucore_contributor', ns):
+        data.append({'name': companie.find('.//ebucore:organisationDetails//ebucore:organisationName', ns).text,
+                     'identifier_uri': companie.find('.//ebucore:organisationDetails', ns).get('organisationID')})
+    return {'type': 'has_agent', 'parsed_data': data}
 
-def getSources(dmdsec,ns):
+
+def getSources(dmdsec, ns):
     # Implements: 21.T11148/828d338a9b04221c9cbe
-    dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName',ns)
+    dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns)
     source = {'type': 'source',
-               'parsed_data':{'name':dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName',ns).text,
-                              'identifier_uri':dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',ns).get('organisationId')}}
+              'parsed_data': {'name': dmdsec.find(
+                  './/ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns).text,
+                              'identifier_uri': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',
+                                                            ns).get('organisationId')}}
     return source
 
-def getLast_modified(dmdsec,ns):
+
+def getLast_modified(dmdsec, ns):
     # Implements: 21.T11148/a27923f25913583b1ea6
     """
     Findet das Datum  an dem die Mets Datei zuletzt verändert wurde.
@@ -138,21 +155,24 @@ def getLast_modified(dmdsec,ns):
     """
     date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("+")
     uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('+')
-    if len(uhrzeit[1])==4:
-        uhrzeit[1]='0'+uhrzeit[1]
-    split=date[0].split('-')
-    if len(split[2])==1:
-        split[2]='0'+split[2]
-        time = split[0]+'-'+split[1]+'-'+split[2]+' '+uhrzeit[0]+'+'+uhrzeit[1]
+    if len(uhrzeit[1]) == 4:
+        uhrzeit[1] = '0' + uhrzeit[1]
+    split = date[0].split('-')
+    if len(split[2]) == 1:
+        split[2] = '0' + split[2]
+        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
     else:
-        time = split[0]+'-'+split[1]+'-'+split[2]+' '+uhrzeit[0]+'+'+uhrzeit[1]
+        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
     return {'type': 'last_modified', 'parsed_data': time}
 
-def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,lastModified=True,Sources=True,HasAgent=True,ManfiestationType=True,YearsofReference=True,releasedate=True,sameas=True,title=False, DataObject=True,VerisonOf=True,identifier=True):
-    json=dict()
-    values=[]
-    #if identifier:
-       # values.append(getIdentifier(version_pid))
+
+def buildVersionJson(dmdsec, ns, pid_works, dataobject_pid: list(), version_pid, lastModified=True, Sources=True,
+                     HasAgent=True, ManfiestationType=True, YearsofReference=True, releasedate=True, sameas=True,
+                     title=False, DataObject=True, VerisonOf=True, identifier=True):
+    json = dict()
+    values = []
+    # if identifier:
+    # values.append(getIdentifier(version_pid))
 
     if VerisonOf:
         values.append(isVersionOf(pid_works))
@@ -161,32 +181,32 @@ def buildVersionJson(dmdsec,ns , pid_works ,dataobject_pid:list(), version_pid,l
         values.append(hasDataObject(dataobject_pid))
 
     if title:
-        values.append(titles(dmdsec,ns))
+        values.append(titles(dmdsec, ns))
 
     if sameas:
-        values.append(sameAs(dmdsec,ns))
+        values.append(sameAs(dmdsec, ns))
 
     if releasedate:
-        values.append(releaseDate(dmdsec,ns))
+        values.append(releaseDate(dmdsec, ns))
 
     if YearsofReference:
-        values.append(getYearsOfReference(dmdsec,ns))
+        values.append(getYearsOfReference(dmdsec, ns))
 
     if ManfiestationType:
-        values.append(getManifestationType(dmdsec,ns))
+        values.append(getManifestationType(dmdsec, ns))
 
     if HasAgent:
-        values.append(getHasAgent(dmdsec,ns))
+        values.append(getHasAgent(dmdsec, ns))
 
     if Sources:
-        values.append(getSources(dmdsec,ns))
+        values.append(getSources(dmdsec, ns))
 
     if lastModified:
-        values.append(getLast_modified(dmdsec,ns))
+        values.append(getLast_modified(dmdsec, ns))
 
-    values.append({'type':'KernelInformationProfile',
-                   'parsed_data':'21.T11148/ef6836b80e4d64e574e3'})
+    values.append({'type': 'KernelInformationProfile',
+                   'parsed_data': '21.T11148/ef6836b80e4d64e574e3'})
 
-    json= [value for value in values if value is not None]
+    json = [value for value in values if value is not None]
 
     return json

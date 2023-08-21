@@ -25,59 +25,44 @@ def getEnumFromType(datatype: str) -> list[str]:
     return json.loads(type_data['properties'][0]['enum'])
 
 
-def getDAtaObejctPidsFrom_Versionhandle(pidOfVersion: str, url: str, user: str, password: str):
+def getDAtaObejctPidsFrom_Versionhandle(pidOfVersion: str, url: str, user: str, password: str) -> object:
     pid = pidOfVersion.split('/')[1]
-
     answer = requests.get(url + pid, auth=(user, password))
-
     data = json.loads(answer.text)
-
     return json.loads(data[1]['parsed_data'])
 
 
-def buildisVersiontOfVersionXML(pidWerk: str):
+def buildisVersiontOfVersionXML(pidWerk: str) -> object:
     root = ET.Element("{urn:ebu:metadata-schema:ebucore}isVersionOf")
-
     root.tail = '     \n  '
-
     # Create the relationIdentifier element
     relation_identifier = ET.SubElement(root, "{urn:ebu:metadata-schema:ebucore}relationIdentifier",
                                         formatLabel="hdl.handle.net")
-
     # Create the dc:identifier element
     dc_identifier = ET.SubElement(relation_identifier, "{http://purl.org/dc/elements/1.1/}identifier")
     dc_identifier.text = pidWerk
-
     return root
 
 
 def buildIsPartOfInXML(pidVersion: str):
     root = ET.Element("{urn:ebu:metadata-schema:ebucore}isPartOf")
-
     root.tail = '     \n  '
-
     # Create the relationIdentifier element
     relation_identifier = ET.SubElement(root, "{urn:ebu:metadata-schema:ebucore}relationIdentifier",
                                         formatLabel="hdl.handle.net")
-
     # Create the dc:identifier element
     dc_identifier = ET.SubElement(relation_identifier, "{http://purl.org/dc/elements/1.1/}identifier")
     dc_identifier.text = pidVersion
-
     return root
 
 
 def buildHasPartInXML(pidDataobject: str):
     root = ET.Element("{urn:ebu:metadata-schema:ebucore}hasPart")
-
     root.tail = '     \n  '
-
     # Create the relationIdentifier element
     relation_identifier = ET.SubElement(root, "{urn:ebu:metadata-schema:ebucore}relationIdentifier",
                                         formatLabel="hdl.handle.net")
-
     # Create the dc:identifier element
     dc_identifier = ET.SubElement(relation_identifier, "{http://purl.org/dc/elements/1.1/}identifier")
     dc_identifier.text = pidDataobject
-
     return root
