@@ -36,7 +36,7 @@ def sumplementaryInformation(dmdsec, ns):
 
 
 def item_file_size(dmdsec, ns):
-    if dmdsec.find('.//ebucore:format//ebucore:fileSize', ns) != None:
+    if dmdsec.find('.//ebucore:format//ebucore:fileSize', ns) is not None:
         size = dmdsec.find('.//ebucore:format//ebucore:fileSize', ns).text
         unit = dmdsec.find('.//ebucore:format//ebucore:fileSize', ns).get('unit')
         return {'type': 'item_file_size', 'parsed_data': str(size) + str(unit)}
@@ -56,7 +56,7 @@ def languages(dmdsec, ns):
     return {'type': 'language_versions', 'parsed_data': language_version}
 
 
-def getLast_modified(dmdsec, ns):
+def getLast_modified(dmdsec, ns) -> dict[str,str]:
     """
     21.T11148/cc9350e8525a1ca5ffe4
     Findet das Datum  an dem die Mets DATei zuletzt verändert wurde.
@@ -68,14 +68,14 @@ def getLast_modified(dmdsec, ns):
     split = date[0].split('-')
     if len(split[2]) == 1:
         split[2] = '0' + split[2]
-        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
+        time = str(split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1])
     else:
-        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
+        time = str(split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1])
 
     return {'type': 'last_modified', 'parsed_data': time}
 
 
-def getIdentifier(identifier: str):
+def getIdentifier(identifier: str) -> dict[str,str]:
     '''
     21.T11148/fae9fd39301eb7e657d4
     '''
@@ -84,29 +84,18 @@ def getIdentifier(identifier: str):
     return {'type': 'identifier', 'parsed_data': {'identifier': identifier.upper()}}
 
 
-def buildData_Object_Json(dmdsec, ns, dataobjectPid, workpid):
-    json = dict()
-    valuedict = dict()
-    values = []
+def buildData_Object_Json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: str) -> dict:
+    values = [{'type': 'is_data_object_of', 'parsed_data': workpid},
+              getLast_modified(dmdsec, ns),
+              {'type': 'source', 'parsed_data': {'name': 'no metadata provider in mets'}}, #TODO should be DK
+              item_file_size(dmdsec, ns),
+              sumplementaryInformation(dmdsec, ns),
+              specific_Carrier_type(dmdsec, ns),
+              {'type': 'KernelInformationProfile', 'parsed_data': '21.T11148/b0047df54c686b9df82a'}]
+
     # values.append(getIdentifier(dataobjectPid))
-
-    values.append({'type': 'is_data_object_of', 'parsed_data': workpid})
-
-    values.append(getLast_modified(dmdsec, ns))
-
-    values.append({'type': 'source', 'parsed_data': {'name': 'no metadata provider in mets'}})
-
     # values.append(languages(dmdsec,ns)) will change soon
-
-    values.append(item_file_size(dmdsec, ns))
-
-    values.append(sumplementaryInformation(dmdsec, ns))
-
     # values.append(perservationAccessStatus(dmdsec,ns)) TODO uncomment as soon as enum list is ready
 
-    values.append(specific_Carrier_type(dmdsec, ns))
-
-    values.append({'type': 'KernelInformationProfile', 'parsed_data': '21.T11148/b0047df54c686b9df82a'})  # version 0.1
-
-    json = [value for value in values if value is not None]
-    return json
+    data_object = {key: value for key, value in values.items() if value is not None}
+    return data_object
