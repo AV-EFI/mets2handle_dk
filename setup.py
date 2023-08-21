@@ -12,6 +12,7 @@ setup(name='mets2handle',
         'lxml==4.9.2',
         'requests==2.31.0',
         'urllib3==2.0.3',
-        'uuid==1.30'
+        'uuid==1.30',
+        'pycountry==22.3.5'
         ]
     )
