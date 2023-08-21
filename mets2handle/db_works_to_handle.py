@@ -1,42 +1,37 @@
 '''
-This module implements the mapping from the relevant Values in the METS xml to a JSON file that contains the Data for an Work Object which represents a cinematographic work.
-The functions basicly map from the METS xml Values to  Handle Values by putting the Values from the XML files into dictionarys that can later be transformed to a JSON file that can be sent to the Handle server.
+This module implements the mapping from the relevant values in the METS xml to 
+a JSON file that contains the data for an Work Object which represents a 
+cinematographic work. The functions basicly map from the METS xml values to  
+standardized values by putting the values from the XML files into dictionarys 
+that can later be transformed into a JSON file that can be sent to the PID 
+service.
 
-The function "buildWorkJson" calls al the functions and puts them into the right order to appear in the json file. It is possible to deselect values that should not appear in the json and therefore are not sent
-to the handle server
+The function "buildWorkJson" calls all the functions and puts them into the 
+right order to appear in the JSON file. It is possible to deselect values that 
+should not appear in the JSON and therefore will not be sent to the PID service.
 
-the function "create_identifier_element" creates and xml element that contains the information about the PID and which can later be inserted into the original METS file
+The function "create_identifier_element" creates and xml element that contains 
+the information about the PID and which can later be inserted into the original 
+METS file.
 
-'KernelInformationProfile'
-'cast'
-'countryOfReference'
-'credits'
-'genre'
-'identifiers'
-'lastModified'
-'originalDuration'
-'originalFormat'
-'originalLanguage'
-'originalLength'
-'productionCompany'
-'relatedIdentifier'
-'schema_version'
-'series'
-'source'
-'title'
-'yearOfReference'
+The Metadata follow the definitions of
+Work: https://dtr-test.pidconsortium.net/#objects/21.T11148/31b848e871121c47d064
 '''
-__author__ = "Henry Beiker"
+__author__ = "Henry Beiker, Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
 
 from lxml import etree as ET
 import uuid
+import helpers
 
 def getIdentifier(pid_work:str):
+    """
+    DTR: 21.T11148/fae9fd39301eb7e657d4
+    """
     handleID =[ {'identifier':pid_work.upper()}]
-    return {'type': 'identifiers','parsed_data':handleID}#21.T11148/fae9fd39301eb7e657d4
+    return {'type': 'identifiers','parsed_data':handleID}
 
 def getTitle(dmdsec :ET,ns):
     """
@@ -44,29 +39,24 @@ def getTitle(dmdsec :ET,ns):
     DTR: 21.T11148/4b18b74f5ed1441bc6a3
     """
     titles=[]
-    titletypen = ['originaltitle', 'releasetitle', 'archivetitle', 'alternativetitle', 'sorttitle']
+    titletypes = helpers.getEnumFromType('21.T11148/2f4e516fbdfa40a52453')
 
     for title in dmdsec.findall(".//dc:title", ns):
-        if str(title.find('..').get('typeLabel')).lower() not in titletypen :
-            """
-            TODO: Check if title can be mapped to on of the allowed titles.
-            Add info to log file.
-            """
-            continue
-        else:
-            titletype=str(title.find('..').get('typeLabel'))
-            # Need to capitalize
-            titletype=titletype[0].capitalize()+titletype[1:]
-        titles.append({'titleValue':title.text, 'titleType':titletype})
+        titlestring = str(title.find('..').get('typeLabel'))
+        try:
+            titles.append({'titleValue':title.text, 'titleType':helpers.vocab_map[titlestring]})
+        except KeyError:
+            helpers.logger.error('WORK: Titel Type "'+titlestring+'" not in vocab_map.json')
+        # If already mapped:
+        if titlestring in titletypes:
+            titles.append({'titleValue':title.text, 'titleType':titlestring})
     return {'type': 'title','parsed_data': titles}
 
 def getSeriesName(dmdsec,ns):
-
     """
+    Use series name if given, otherwise set to none.
     Wenn das Werk einen Seriennamen besitzt, dann wird diser hiermit gefunden.
     Existiert kein Serienname ist der Eintrag None
-
-
     """
     #TODO: Es gibt noch ungereimtheiten bei den wertelisten sowie mit den identifiern
     name=" "
@@ -78,7 +68,6 @@ def getSeriesName(dmdsec,ns):
     return title
 
 def getSource(dmdsec,ns):
-
     """
     Findet den Namen der Organisation, welche das Werk verwaltet
     """
@@ -94,21 +83,22 @@ def getCredits(dmdsec,ns):
     """
     Findet den Regisseur
     """
-    creditoptions=["Assistant Camera Operator","2nd Unit Director","2nd Unit Director of Photography","Adaptation","Animation","Art Director",
-                    "Artistic direction","Assistant","Assistant Art Direction","Assistant Camera Operator","Assistant Director","Assistant Editor",
-                    "Assistant Set Designer","Associate producer","Casting Director","Caterer","Chief Lighting Technician","Choreographer","Clapper Loader",
-                    "Commentary","Compilation","Consultant","Continuity","Costume Design","Director","Director of Photography","Editor","Executive Producer",
-                    "Film Funding","Foley Artist","Gowns by","Host","Idea","Lamp Operator","Line Producer","Location Scout","Make-up","Musical direction","Narration",
-                    "Negative Cutter","Pre-Production Design","Producer","Producer","Production Assistant","Production design","Props","Researcher","Screenplay","Set Decorator",
-                    "Set Decorator","Set Designer","Singing Voice","Sound","Sound Assistant","Sound Design","Sound Editor","Sound Recordist","Source Material","Special Effects",
-                    "Special Effects Camera","Steadicam Operator","Still Photography","Stock Footage","Storyboard Artist","Stunt Coordinator","Title Design","TV Director","Visual Effects"]
+    creditsRole = helpers.getEnumFromType('21.T11148/8dca46428d005a2f4c2e')
+    #creditoptions=["Assistant Camera Operator","2nd Unit Director","2nd Unit Director of Photography","Adaptation","Animation","Art Director",
+    #                "Artistic direction","Assistant","Assistant Art Direction","Assistant Camera Operator","Assistant Director","Assistant Editor",
+    #                "Assistant Set Designer","Associate producer","Casting Director","Caterer","Chief Lighting Technician","Choreographer","Clapper Loader",
+    #                "Commentary","Compilation","Consultant","Continuity","Costume Design","Director","Director of Photography","Editor","Executive Producer",
+    #                "Film Funding","Foley Artist","Gowns by","Host","Idea","Lamp Operator","Line Producer","Location Scout","Make-up","Musical direction","Narration",
+    #                "Negative Cutter","Pre-Production Design","Producer","Producer","Production Assistant","Production design","Props","Researcher","Screenplay","Set Decorator",
+    #                "Set Decorator","Set Designer","Singing Voice","Sound","Sound Assistant","Sound Design","Sound Editor","Sound Recordist","Source Material","Special Effects",
+    #                "Special Effects Camera","Steadicam Operator","Still Photography","Stock Footage","Storyboard Artist","Stunt Coordinator","Title Design","TV Director","Visual Effects"]
 
     credits=[]
     for contributor in dmdsec.findall('.//ebucore:contributor',ns):
 
         for role in contributor.findall('.//ebucore:role',ns):
 
-            if role.get('typeLabel').lower() in [creditoption.lower() for creditoption in creditoptions]:
+            if role.get('typeLabel').lower() in [creditoption.lower() for creditoption in creditsRole]:
                 name=contributor.find('./ebucore:contactDetails',ns).find('./ebucore:name',ns).text.split(',')
 
                 if contributor.find('.//ebucore:contactDetails',ns).get('contactId') != None: #checktob es eine uri gibt
@@ -144,39 +134,18 @@ def getCast(dmdsec,ns):
                 cast.append(
                     {'name':{'family-name':name[0],'given-name':name[1].strip()},
                     'identifier_uri':contributor.find('.//ebucore:contactDetails',ns).get('contactId')
-
-
-
-
-
                     })
             else:
-                cast.append(
-                    {'name':{'family-name':name[0],'given-name':name[1].strip()},
-
-
-
-
-
-
-                    })
-
-
-
+                cast.append({'name':{'family-name':name[0],'given-name':name[1].strip()},})
     if  len(cast)==0:
         return None
     return  {'type': 'cast','parsed_data':cast}#21.T11148/39aa12e6d633fbb40d65
 
 def getOriginal_duration(dmdsec,ns):
-
     """
-
     Findet die Länge des Werkes
     21.T11148/b8a2e906c01f78a0d37b
-    
     """
-    
-
     duration =dmdsec.find('.//ebucore:duration',ns)
     if duration!=None and duration.get('typeLabel')=='originalDuration':
         time =duration.find('.//ebucore:normalPlayTime',ns).text
@@ -218,8 +187,6 @@ def getProduction_companies(dmdsec,ns):
     companies=[]
     # for companie in companies add {name + uri} to companies
     company=' '
-
-
     #platzhalter companielist nicht zu finden in xml
 
     if len(companies)==0:
@@ -231,8 +198,7 @@ def getOriginal_language(dmdsec,ns):
     """
     Findet die Sprache, in der das Werk erstmalig aufgenommen worden ist
     21.T11148/577d96232ee6ea2f8dfa
-    """
-    
+    """  
     original_languages=[]
 
     for lan in dmdsec.findall('.//ebucore:language',ns):
@@ -247,8 +213,7 @@ def getCountries_of_reference(dmdsec,ns):
     """
     Findet ursprungsland
     TODO:
-    Unklar ob es mehrere urspunrgsländer gebven kann
-
+    Unklar ob es mehrere urspunrgsländer geben kann
     es muss unbedingt die länder liste geändert werden
     """
     land = []
@@ -260,10 +225,8 @@ def getCountries_of_reference(dmdsec,ns):
     return{'type': 'countryOfReference', 'parsed_data': land}
 
 def getYears_of_reference(dmdsec,ns):#wird eventuell noch abgeändert
-
     """
     Findet den Erstellsungszeitraum hier Benannt year of reference
-
     21.T11148/089d6db63cf69c35930d
     """
 
@@ -395,7 +358,7 @@ related_identifier=True,original_format=True,genre=True):
 
     values.append({'type':'KernelInformationProfile','parsed_data':'21.T11148/31b848e871121c47d064'}) #version 0.1
 
-    json=  [value for value in values if value is not None]
+    json=[value for value in values if value is not None]
 
     return json
 

@@ -1,9 +1,12 @@
 '''
 This module implements the creation of the PID records for the
-data object/item-KernelInformationProfile.
+data object/item.
+
+The Metadata follow the definitions of
+Data Object: https://dtr-test.pidconsortium.net/#objects/21.T11148/b0047df54c686b9df82a
 '''
 
-__author__ = "Henry Beiker"
+__author__ = "Henry Beiker, Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
