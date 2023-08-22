@@ -22,7 +22,11 @@ __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
 
+from typing import Union
+
 from lxml import etree as ET
+from lxml.etree import Element
+
 from mets2handle import helpers
 import pycountry
 
@@ -138,7 +142,7 @@ def getCast(dmdsec, ns):
     return {'type': 'cast', 'parsed_data': cast}  # 21.T11148/39aa12e6d633fbb40d65
 
 
-def getOriginal_duration(dmdsec, ns):
+def getOriginal_duration(dmdsec: Element, ns: dict) -> Union[dict, None]:
     """
     Findet die Länge des Werkes
     21.T11148/b8a2e906c01f78a0d37b
@@ -147,6 +151,7 @@ def getOriginal_duration(dmdsec, ns):
     if duration is not None and duration.get('typeLabel') == 'originalDuration':
         time = duration.find('.//ebucore:normalPlayTime', ns).text
         return {'type': 'originalDuration', 'parsed_data': {'original_duration': time}}
+
     return None
 
 
@@ -317,7 +322,7 @@ def getOriginal_format(dmdsec, ns):
 
 
 # build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann.
-def buildWorkJson(dmdsec, ns: dict[str,str], pid_work, handleId=True, title=True, series=False, credit=False, cast=True,
+def buildWorkJson(dmdsec: Element, ns: dict[str,str], pid_work, handleId=True, title=True, series=False, credit=False, cast=True,
                   original_duration=True, Source=True, source_identifier=False, last_modifed=True,
                   production_companies=True,
                   countries_of_reference=True, original_language=False, years_of_reference=True,

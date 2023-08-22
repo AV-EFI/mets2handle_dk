@@ -6,18 +6,17 @@ __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
 
-from typing import Text
-from lxml import etree as ET
 import json
-from requests.api import get, put
 import sys
-import urllib.request, urllib.error, urllib.parse
-import requests
 # import db_works_to_handle as xj
 # import .db_version_to_handle as vh
 # import .db_data_object_to_handle as oh
 import uuid
 from pathlib import Path
+from xml.etree import ElementTree
+
+import requests
+from lxml import etree as ET
 
 import mets2handle
 
@@ -68,7 +67,8 @@ Handle-Server gesendet.
 
 def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
         , dumpjsons=True):
-    # dumpjsons=True  set to false if you wish not to have the jsons that are sent to the handle server beeing outputted into this directory
+    # dumpjsons=True  set to false if you wish not to have the jsons that are sent to the
+    # handle server beeing outputted into this directory
 
     # Read credentials for the ePIC PID service
     connection_details = {}
@@ -94,7 +94,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
     parser = ET.XMLParser(remove_comments=False)
 
     try:
-        xml_tree = ET.parse(filename, parser=parser)
+        xml_tree: ElementTree = ET.parse(filename, parser=parser)
     except IndexError:
         raise SystemExit(f"Usage: {sys.argv[0]} <path_to_XML_file>")
 
@@ -137,7 +137,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
         if dmdsec.get('ID') in cinematographic_works:
             # TODO: hier abfrage, ob Werk bereits PID hat
             uid = str(uuid.uuid4())
-            cinematographic_work_pid = connection_details['prefix'] + '/{}'.format(str(u))
+            cinematographic_work_pid = connection_details['prefix'] + '/{}'.format(str(uid))
             cinematographic_work_pids.append(cinematographic_work_pid.upper())
 
             if dumpjsons:
@@ -170,7 +170,6 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
 
                     baum = ET.ElementTree(root)
                     baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-                    metsfile.close
             else:
 
                 print(response_from_handle_server.status_code, respon)
@@ -212,7 +211,6 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
 
                     baum = ET.ElementTree(root)
                     baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-                    metsfile.close
             elif response_from_handle_server.status_code == 400:
                 print('Wrongly formatted request')
                 print(payload)
@@ -224,6 +222,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
         #  generate a new UUID to use as the PID for the work, generate the JSON for the work,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the work
         if dmdsec.get('ID') in dataobjects:
+            # TODO: version_pid not definied yet
             json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid),
                       open('dataobject.json', 'w', encoding='utf8'),
                       indent=4, sort_keys=False, ensure_ascii=False)
@@ -250,5 +249,4 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
                 with open(filename, 'wb') as metsfile:
                     baum = ET.ElementTree(root)
                     baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-                    metsfile.close
     return True  # if successfull
