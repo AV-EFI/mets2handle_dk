@@ -17,7 +17,7 @@ from xml.etree import ElementTree
 
 import requests
 from lxml import etree as ET
-import helpers
+from mets2handle import helpers
 import mets2handle
 
 '''
@@ -67,6 +67,8 @@ Handle-Server gesendet.
 
 def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
         , dumpjsons=True):
+
+    helpers.logger.info(' --- Start new run ---')
     # dumpjsons=True  set to false if you wish not to have the jsons that are sent to the
     # handle server beeing outputted into this directory
 
@@ -148,6 +150,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
 
             payload = mets2handle.buildWorkJson(root, ns, pid_work=cinematographic_work_pid, original_duration=False,
                                                 related_identifier=False, original_format=False)
+            print('CREATE PID FOR WORK -----------------------')
             helpers.logger.info('CREATE PID FOR WORK')
 
             response_from_handle_server = requests.put(
@@ -176,9 +179,6 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
 
                     baum = ET.ElementTree(root)
                     baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-            else:
-
-                print(response_from_handle_server.status_code, respon)
 
         # if the ID attribute of the dmdSec element is in the list of versions,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
@@ -198,7 +198,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
             print('CREATE PID FOR VERSION -----------------------')
             response_from_handle_server = requests.put(connection_details['url'] + work_uuid, auth=(
             connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
-            # print(response_from_handle_server.text,response_from_handle_server.status_code)
+            print(response_from_handle_server.status_code,response_from_handle_server.text)
 
             if response_from_handle_server.status_code == 201:
                 # gets pid from response
@@ -239,7 +239,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
             response_from_handle_server = requests.put(connection_details['url'] + data_object_uuid, auth=(
             connection_details['user'], connection_details['password']), headers=header, data=json.dumps(payload))
 
-            print(response_from_handle_server.text, response_from_handle_server.status_code)
+            print(response_from_handle_server.status_code, response_from_handle_server.text)
             if response_from_handle_server.status_code == 201:
                 respon = json.loads(response_from_handle_server.text)
                 pid = respon['handle']

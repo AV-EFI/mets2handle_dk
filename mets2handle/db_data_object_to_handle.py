@@ -84,7 +84,7 @@ def getIdentifier(identifier: str) -> dict[str,str]:
     return {'type': 'identifier', 'parsed_data': {'identifier': identifier.upper()}}
 
 
-def buildData_Object_Json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: str) -> dict:
+def buildData_Object_Json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: str) -> list[dict]:
     values = [{'type': 'is_data_object_of', 'parsed_data': workpid},
               getLast_modified(dmdsec, ns),
               {'type': 'source', 'parsed_data': {'name': 'no metadata provider in mets'}}, #TODO should be DK
@@ -97,5 +97,6 @@ def buildData_Object_Json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: st
     # values.append(languages(dmdsec,ns)) will change soon
     # values.append(perservationAccessStatus(dmdsec,ns)) TODO uncomment as soon as enum list is ready
 
-    data_object = {key: value for key, value in values.items() if value is not None}
+    data_object = [value for value in values if value is not None]
+
     return data_object
