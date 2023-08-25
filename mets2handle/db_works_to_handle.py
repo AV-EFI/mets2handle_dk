@@ -309,16 +309,27 @@ def getOriginal_format(dmdsec, ns):
     """
     Gibt das Format zurück, auf welchem der Film gespeichert wurde
     """
-    format = ''  # wo zu finden? was ist gemeint ?
-    format_Sec = dmdsec.find('.//ebucore:format', ns)
-    if format_Sec != None:  #
-        if format_Sec.find('.//ebucore:containerFormat//ebucore:containerEncoding', ns) != None:
-            format = format_Sec.find('.//ebucore:containerFormat', ns).find('ebucore:containerEncoding', ns).get(
-                'formatLabel')
-
-    if not len(format):
+    try:
+        format_sec = dmdsec.xpath(
+            './/ebucore:format[@typeLabel="originalFormat"]',
+            namespaces=ns)[0]
+    except IndexError:
         return None
-    return {'type': 'originalFormat', 'parsed_data': format}
+    parsed_data = {}
+    for prefix in ('video', 'audio'):
+        for suffix in ('Format', 'Type'):
+            try:
+                val = format_sec.xpath(
+                    f'ebucore:{prefix}Format/ebucore:technicalAttributeString'
+                    f'[@typeLabel="material{suffix}"]',
+                    namespaces=ns)[0].text
+            except IndexError:
+                continue
+            if val:
+                parsed_data[f"{prefix}Material{suffix}"] = val
+    if not parsed_data:
+        return None
+    return {'type': 'originalFormat', 'parsed_data': parsed_data}
 
 
 # build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann.
