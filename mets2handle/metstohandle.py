@@ -288,7 +288,6 @@ def m2h(filename,
                     with open(out_file, 'wb') as metsfile:
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-                        metsfile.close
 
             if boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[
                 2]:  # case fresh dataobject in mets where version and work have a pid already
