@@ -65,11 +65,17 @@ Handle-Server gesendet.
 '''
 
 
-def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
-        , dumpjsons=True):
+def m2h(filename,
+        out_file=None,
+        credentials='./mets2handle/credentials/handle_connection.txt',
+        dumpjsons=True):
     helpers.logger.info(' --- Start new run ---')
     # dumpjsons=True  set to false if you wish not to have the jsons that are sent to the
     # handle server beeing outputted into this directory
+
+    # Define where to write the new XML
+    if out_file is None:
+        out_file = filename
 
     # Read credentials for the ePIC PID service
     connection_details = {}
@@ -178,7 +184,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
                     new_tree = ET.tostring(xml_tree, pretty_print=True)
-                    with open(sys.argv[1], 'wb') as metsfile:
+                    with open(out_file, 'wb') as metsfile:
 
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
@@ -236,7 +242,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
                     new_tree = ET.tostring(xml_tree, pretty_print=True)
-                    with open(sys.argv[1], 'wb') as metsfile:
+                    with open(out_file, 'wb') as metsfile:
 
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
@@ -279,7 +285,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
                     new_tree = ET.tostring(xml_tree, pretty_print=True)
-                    with open(sys.argv[1], 'wb') as metsfile:
+                    with open(out_file, 'wb') as metsfile:
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
                         metsfile.close
@@ -323,7 +329,7 @@ def m2h(filename, credentials='./mets2handle/credentials/handle_connection.txt'
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
                     new_tree = ET.tostring(xml_tree, pretty_print=True)
-                    with open(sys.argv[1], 'wb') as metsfile:
+                    with open(out_file, 'wb') as metsfile:
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
     return True  # if successfull
