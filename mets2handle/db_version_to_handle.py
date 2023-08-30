@@ -93,7 +93,8 @@ def releaseDate(dmdsec, ns):
         helpers.logger.error('VERSION: No release date found')
         releasedate = '1000'
     # if only year is given, we apped -01-01
-    releasedate = releasedate + '-01-01'
+    if len(releasedate)<4:
+        releasedate = releasedate + '-01-01'
     return ({'type': 'release_date', 'parsed_data': releasedate})
 
 
@@ -153,16 +154,10 @@ def getLast_modified(dmdsec, ns):
     Findet das Datum  an dem die Mets Datei zuletzt verändert wurde.
     TODO: Klären ob hier nicht die letzte Änderung der PID eingetragen werden muss.
     """
-    date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("+")
-    uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('+')
-    if len(uhrzeit[1]) == 4:
-        uhrzeit[1] = '0' + uhrzeit[1]
-    split = date[0].split('-')
-    if len(split[2]) == 1:
-        split[2] = '0' + split[2]
-        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
-    else:
-        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
+    date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("Z")
+    uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('Z')
+
+    time= date[0] + ' ' + uhrzeit[0]
     return {'type': 'last_modified', 'parsed_data': time}
 
 

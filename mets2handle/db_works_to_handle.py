@@ -169,18 +169,12 @@ def getLast_modified(dmdsec, ns):
     21.T11148/cc9350e8525a1ca5ffe4
     Findet das Datum  an dem die Mets DATei zuletzt verändert wurde.
     """
-    date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("+")
-    uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('+')
-    if len(uhrzeit[1]) == 4:
-        uhrzeit[1] = '0' + uhrzeit[1]
-    split = date[0].split('-')
-    if len(split[2]) == 1:
-        split[2] = '0' + split[2]
-        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
+    date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("Z")
+    uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('Z')
 
+    time= date[0] + ' ' + uhrzeit[0]
+    
 
-    else:
-        time = split[0] + '-' + split[1] + '-' + split[2] + ' ' + uhrzeit[0] + '+' + uhrzeit[1]
 
     return {'type': 'lastModified', 'parsed_data': time}
 
