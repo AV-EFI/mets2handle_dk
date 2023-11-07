@@ -81,13 +81,11 @@ def m2h(filename,
     connection_details = {}
 
     print(Path.cwd())
-    try:
+    if True:
         with open(credentials, "r") as f:
             for line in f:
                 key, value = line.strip().split("|")
                 connection_details[key] = value
-    except EnvironmentError:  # parent of IOError, OSError *and* WindowsError where available
-        print('Please make sure that handle_connection.txt is in the same folder')
 
     header = {'accept': 'application/json', 'If-None-Match': 'default', 'If-Match': 'default',
               'Content-Type': 'application/json'}
@@ -168,10 +166,11 @@ def m2h(filename,
                                                            data=json.dumps(payload))
 
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Work-request')
+                response_from_handle_server.raise_for_status()
 
                 respon = json.loads(response_from_handle_server.text)
                 multiworkno = multiworkno + 1
-                if response_from_handle_server.status_code == 201:
+                if True: # Just to keep diff output short
                     # gets pid from response
                     pid = respon['handle']
                     cinematographic_work_pids.append(pid)
@@ -188,8 +187,6 @@ def m2h(filename,
 
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-                else:
-                    print(response_from_handle_server.status_code, respon)
 
         # if the ID attribute of the dmdSec element is in the list of versions,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
@@ -225,8 +222,9 @@ def m2h(filename,
                                                            data=json.dumps(payload_version))
 
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Version-request')
+                response_from_handle_server.raise_for_status()
 
-                if response_from_handle_server.status_code == 201:
+                if True: # Just to keep diff output short
                     # gets pid from response
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
@@ -272,7 +270,8 @@ def m2h(filename,
                                                            data=json.dumps(payload))
 
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
-                if response_from_handle_server.status_code == 201:
+                response_from_handle_server.raise_for_status()
+                if True: # Just to keep diff output short
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
                     dataobject_Pid = pid
@@ -303,6 +302,7 @@ def m2h(filename,
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to update-Version-request')
 
                 print(response_from_handle_server)
+                response_from_handle_server.raise_for_status()
 
                 json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid),
                           open('dataobject.json', 'w', encoding='utf8'),
@@ -316,7 +316,8 @@ def m2h(filename,
                                                            data=json.dumps(payload))
 
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
-                if response_from_handle_server.status_code == 201:
+                response_from_handle_server.raise_for_status()
+                if True: # Just to keep diff output short
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
 
