@@ -290,20 +290,6 @@ def m2h(filename,
 
             if boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[
                 2]:  # case fresh dataobject in mets where version and work have a pid already
-
-                payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
-                                                               dataobject_pid=dataObjectPids, version_pid=version_pid)
-                print(payload_version)
-                print(version_uuid)
-                response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
-                    connection_details['user'], connection_details['password']), headers=header,
-                                                           data=json.dumps(payload_version))
-
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to update-Version-request')
-
-                print(response_from_handle_server)
-                response_from_handle_server.raise_for_status()
-
                 json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid),
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
@@ -332,4 +318,17 @@ def m2h(filename,
                     with open(out_file, 'wb') as metsfile:
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
+
+                payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
+                                                               dataobject_pid=dataObjectPids, version_pid=version_pid)
+                print(payload_version)
+                print(version_uuid)
+                response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
+                    connection_details['user'], connection_details['password']), headers=header,
+                                                           data=json.dumps(payload_version))
+
+                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to update-Version-request')
+
+                print(response_from_handle_server)
+                response_from_handle_server.raise_for_status()
     return True  # if successfull
