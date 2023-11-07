@@ -152,9 +152,8 @@ def m2h(filename,
                     cinematographic_work_pids.append(str(identifier.find('.//dc:identifier', ns).text).strip())
 
             if not boolean_list_if_pids_exists[0]:
-                uid = str(uuid.uuid4())
-                cinematographic_work_pid = '21.T11998/{}'.format(str(uid))
-                cinematographic_work_pids.append(cinematographic_work_pid.upper())
+                work_uuid = str(uuid.uuid4())
+                cinematographic_work_pid = '21.T11998/{}'.format(str(work_uuid))
 
                 if dumpjsons:
                     json.dump(mets2handle.buildWorkJson(dmdsec, ns, pid_work=cinematographic_work_pid),
@@ -164,17 +163,18 @@ def m2h(filename,
                 payload = mets2handle.buildWorkJson(root, ns, pid_work=cinematographic_work_pid,
                                                     original_duration=False,
                                                     related_identifier=False, original_format=False)
-                response_from_handle_server = requests.put(connection_details['url'] + uid, auth=(
+                response_from_handle_server = requests.put(connection_details['url'] + work_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(payload))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Work Created')
+                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Work-request')
 
                 respon = json.loads(response_from_handle_server.text)
                 multiworkno = multiworkno + 1
                 if response_from_handle_server.status_code == 201:
                     # gets pid from response
                     pid = respon['handle']
+                    cinematographic_work_pids.append(pid)
 
                     # writes new PID into the mets file
                     new_ident = mets2handle.create_identifier_element(pid)
@@ -195,8 +195,8 @@ def m2h(filename,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the version
         if dmdsec.get('ID') in versions:
-            uid = str(uuid.uuid4())
-            version_pid = '21.T11998/{}'.format(str(uid))
+            version_uuid = str(uuid.uuid4())
+            version_pid = '21.T11998/{}'.format(str(version_uuid))
             dataObjectPids = [dataobject_Pid]
             # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
             for identifier in dmdsec.findall('.//ebucore:identifier',
@@ -204,7 +204,7 @@ def m2h(filename,
                 if identifier.get('formatLabel') == "hdl.handle.net":
                     boolean_list_if_pids_exists[1] = 1
                     version_pid = str(identifier.find('.//dc:identifier', ns).text).strip()
-                    uid = str(identifier.find('.//dc:identifier', ns).text).strip().split('/')[1]
+                    version_uuid = str(identifier.find('.//dc:identifier', ns).text).strip().split('/')[1]
                     dataObjectPids.extend(
                         helpers.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],
                                                                     connection_details['user'],
@@ -220,16 +220,17 @@ def m2h(filename,
                 payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
                                                                dataobject_pid=dataObjectPids, version_pid=version_pid)
 
-                response_from_handle_server = requests.put(connection_details['url'] + uid, auth=(
+                response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(payload_version))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Version Created')
+                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Version-request')
 
                 if response_from_handle_server.status_code == 201:
                     # gets pid from response
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
+                    version_pid = pid
 
                     # writes new PID into the mets file
                     for workPid in cinematographic_work_pids:
@@ -246,8 +247,6 @@ def m2h(filename,
 
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
-
-                respon = json.loads(response_from_handle_server.text)
 
         # if the ID attribute of the dmdSec element is in the list of dataobjects,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the dataobject,
@@ -272,10 +271,11 @@ def m2h(filename,
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(payload))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Dataobject Created')
+                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
                 if response_from_handle_server.status_code == 201:
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
+                    dataobject_Pid = pid
 
                     # writes new PID into the mets file
                     new_ident = mets2handle.create_identifier_element(pid)
@@ -295,12 +295,12 @@ def m2h(filename,
                 payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
                                                                dataobject_pid=dataObjectPids, version_pid=version_pid)
                 print(payload_version)
-                print(uid)
-                response_from_handle_server = requests.put(connection_details['url'] + uid, auth=(
+                print(version_uuid)
+                response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(payload_version))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Dataobject Created')
+                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to update-Version-request')
 
                 print(response_from_handle_server)
 
@@ -315,7 +315,7 @@ def m2h(filename,
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(payload))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code)
+                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
                 if response_from_handle_server.status_code == 201:
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
