@@ -67,6 +67,8 @@ Handle-Server gesendet.
 
 def m2h(filename,
         out_file=None,
+        work_pid=None,
+        version_pid=None,
         credentials='./mets2handle/credentials/handle_connection.txt',
         dumpjsons=True):
     helpers.logger.info(' --- Start new run ---')
@@ -131,6 +133,14 @@ def m2h(filename,
     if len(dataobjects) != 1:
         raise ValueError(
             f"Unexpectedly found {len(dataobjects)} DataObjects in {filename}.")
+    if work_pid and len(cinematographic_works) != 1:
+        raise ValueError(
+            f"Parameter work_pid not allowed since there are"
+            f" {len(cinematographic_works)} works recorded in {filename}.")
+    if version_pid and len(versions) != 1:
+        raise ValueError(
+            f"Parameter version_pid not allowed since there are"
+            f" {len(versions)} versions recorded in {filename}.")
 
     # empty list to hold PIDs of cinematographic works
     cinematographic_work_pids = []
@@ -147,6 +157,7 @@ def m2h(filename,
         # generate a new UUID to use as the PID for the work, generate the JSON for the work,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the work
         if dmdsec.get('ID') in cinematographic_works:
+            pid = None
             # TODO: hier abfrage, ob Werk bereits Pid hat
 
             for identifier in dmdsec.findall('.//ebucore:identifier',
@@ -155,7 +166,16 @@ def m2h(filename,
                     boolean_list_if_pids_exists[0] = 1
                     cinematographic_work_pids.append(str(identifier.find('.//dc:identifier', ns).text).strip())
 
-            if not boolean_list_if_pids_exists[0]:
+            if work_pid:
+                if boolean_list_if_pids_exists[0]:
+                    if work_pid not in cinematographic_work_pids:
+                        raise ValueError(
+                            f"Parameter work_pid={work_pid} clashes with"
+                            f" existing value in {filename}:"
+                            f" {cinematographic_work_pids[-1]}.")
+                else:
+                    pid = work_pid
+            elif not boolean_list_if_pids_exists[0]:
                 work_uuid = str(uuid.uuid4())
                 cinematographic_work_pid = '21.T11998/{}'.format(str(work_uuid))
 
@@ -179,6 +199,9 @@ def m2h(filename,
                 if True: # Just to keep diff output short
                     # gets pid from response
                     pid = respon['handle']
+
+            if pid:
+                if True: # Just to keep diff output short
                     cinematographic_work_pids.append(pid)
 
                     # writes new PID into the mets file
@@ -198,23 +221,32 @@ def m2h(filename,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the version,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the version
         if dmdsec.get('ID') in versions:
-            version_uuid = str(uuid.uuid4())
-            version_pid = '21.T11998/{}'.format(str(version_uuid))
-            dataObjectPids = [dataobject_Pid]
+            pid = existing_pid = None
             # TODO: Hier gegebenenfalls abfrage, ob Versions_pid bereits im METS vorhanden ist
             for identifier in dmdsec.findall('.//ebucore:identifier',
                                              ns):  # checks if work has a existing pid. if thats the case we add a 1 to the boolean array
                 if identifier.get('formatLabel') == "hdl.handle.net":
                     boolean_list_if_pids_exists[1] = 1
-                    version_pid = str(identifier.find('.//dc:identifier', ns).text).strip()
+                    existing_pid = str(identifier.find('.//dc:identifier', ns).text).strip()
+                    if version_pid and version_pid != existing_pid:
+                        raise ValueError(
+                            f"Parameter version_pid={version_pid} clashes with"
+                            f" existing value in {filename}: {existing_pid}.")
                     version_uuid = str(identifier.find('.//dc:identifier', ns).text).strip().split('/')[1]
                     dataObjectPids.extend(
                         helpers.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],
                                                                     connection_details['user'],
                                                                     connection_details['password']))
+                    break
 
             xml_tree_modified = False
-            if not boolean_list_if_pids_exists[1]:
+            if version_pid:
+                if not boolean_list_if_pids_exists[1]:
+                    pid = version_pid
+            elif not boolean_list_if_pids_exists[1]:
+                version_uuid = str(uuid.uuid4())
+                version_pid = '21.T11998/{}'.format(str(version_uuid))
+                dataObjectPids = [dataobject_Pid]
                 if dumpjsons:
                     json.dump(mets2handle.buildVersionJson(dmdsec, ns, pid_works=cinematographic_work_pids,
                                                            dataobject_pid=dataObjectPids, version_pid=version_pid),
@@ -235,6 +267,10 @@ def m2h(filename,
                     # gets pid from response
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
+            else:
+                pid = existing_pid
+            if pid:
+                if True: # Just to keep diff output short
                     version_pid = pid
 
                     # writes new PID into the mets file
