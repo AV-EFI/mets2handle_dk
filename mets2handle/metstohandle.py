@@ -207,6 +207,7 @@ def m2h(filename,
                                                                     connection_details['user'],
                                                                     connection_details['password']))
 
+            xml_tree_modified = False
             if not boolean_list_if_pids_exists[1]:
                 if dumpjsons:
                     json.dump(mets2handle.buildVersionJson(dmdsec, ns, pid_works=cinematographic_work_pids,
@@ -239,8 +240,27 @@ def m2h(filename,
                     new_ident.text = '\n              '
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).addprevious(new_ident)
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
+                    xml_tree_modified = True
 
-                    new_tree = ET.tostring(xml_tree, pretty_print=True)
+            # Update list of referenced DataObjects
+            old_references = dmdsec.xpath(
+                './/ebucore:hasPart[@formatLabel="hdl.handle.net"]', ns)
+            recorded_data_objects = set([
+                str(el.find('.//dc:identifier', ns).text).strip()
+                for el in old_references])
+            if recorded_data_objects != set(dataObjectPids):
+                insert_here = dmdsec.find('.//ebucore:hasPart', ns)
+                for pid in dataObjectPids:
+                    insert_here.addprevious(
+                        helpers.buildHasPartInXML(pid))
+                if old_references:
+                    parent_element = data_object_references[0].getparent()
+                    for old_record in data_object_references:
+                        parent_element.remove(old_record)
+                xml_tree_modified = True
+
+            if xml_tree_modified:
+                if True: # Just to keep diff output short
                     with open(out_file, 'wb') as metsfile:
 
                         baum = ET.ElementTree(root)
@@ -283,6 +303,9 @@ def m2h(filename,
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).addprevious(new_ident)
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
 
+                    dmdsec.find('.//ebucore:isPartOf', ns).addprevious(
+                        helpers.buildIsPartOfInXML(version_pid))
+
                     new_tree = ET.tostring(xml_tree, pretty_print=True)
                     with open(out_file, 'wb') as metsfile:
                         baum = ET.ElementTree(root)
@@ -313,6 +336,9 @@ def m2h(filename,
                     new_ident.text = '\n              '
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).addprevious(new_ident)
                     dmdsec.find('.//ebucore:coreMetadata', ns).find('ebucore:identifier', ns).tail = '\n\n            '
+
+                    dmdsec.find('.//ebucore:isPartOf', ns).addprevious(
+                        helpers.buildIsPartOfInXML(version_pid))
 
                     new_tree = ET.tostring(xml_tree, pretty_print=True)
                     with open(out_file, 'wb') as metsfile:
