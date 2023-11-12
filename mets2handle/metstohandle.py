@@ -6,6 +6,7 @@ __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
 
+import argparse
 import json
 import sys
 # import db_works_to_handle as xj
@@ -400,3 +401,35 @@ def m2h(filename,
                 print(response_from_handle_server)
                 response_from_handle_server.raise_for_status()
     return True  # if successfull
+
+
+def cli_entry_point():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-c', '--credentials', metavar='<credentials_file>',
+        default='handle_connection.txt',
+        help='File containing credentials for access to handle system'
+        ' (default: %(default)s).')
+    parser.add_argument(
+        '-d', '--dump-jsons', action='store_true',
+        help='Write generated json to stdout in, then send request.')
+    parser.add_argument(
+        '-o', '--out-file', metavar='<modified_mets>',
+        help='Do not modify METS in place but write to this file instead.')
+    parser.add_argument(
+        '-v', '--version-pid', metavar='<known_handle_for_version>',
+        help='Instead of registering new version handle, use this one.')
+    parser.add_argument(
+        '-w', '--work-pid', metavar='<known_handle_for_work>',
+        help='Instead of registering new work handle, use this one.')
+    parser.add_argument(
+        'mets_file', metavar='<mets_file>',
+        help='METS file containing dmdSecs for DataObject, Version, and Work.')
+    args = parser.parse_args()
+    return m2h(
+        args.mets_file,
+        out_file=args.out_file,
+        work_pid=args.work_pid,
+        version_pid=args.version_pid,
+        credentials=args.credentials,
+        dumpjsons=args.dump_jsons)
