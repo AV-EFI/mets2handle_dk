@@ -125,6 +125,12 @@ def m2h(filename,
 
         if element_type == 'dataObject':
             dataobjects.append(div.get('DMDID'))
+    if len(versions) != 1:
+        raise ValueError(
+            f"Unexpectedly found {len(versions)} versions in {filename}.")
+    if len(dataobjects) != 1:
+        raise ValueError(
+            f"Unexpectedly found {len(dataobjects)} DataObjects in {filename}.")
 
     # empty list to hold PIDs of cinematographic works
     cinematographic_work_pids = []
