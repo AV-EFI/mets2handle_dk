@@ -4,3 +4,4 @@ __pycache__/
 *.json
 mets2handle.egg-info
 build
+venv

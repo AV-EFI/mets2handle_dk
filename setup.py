@@ -14,5 +14,10 @@ setup(name='mets2handle',
         'urllib3==2.0.3',
         'uuid==1.30',
         'pycountry==22.3.5'
-        ]
+        ],
+      entry_points={
+          'console_scripts': [
+              'metstohandle=mets2handle.metstohandle:cli_entry_point',
+          ],
+      }
     )
