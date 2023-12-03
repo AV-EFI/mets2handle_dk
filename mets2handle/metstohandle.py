@@ -172,33 +172,35 @@ def m2h(filename,
                 else:
                     pid = work_pid
             elif not boolean_list_if_pids_exists[0]:
+                # Generate a work pid
                 work_uuid = str(uuid.uuid4())
                 cinematographic_work_pid = connection_details['prefix'] + '/{}'.format(str(work_uuid))
 
+                work_json = mets2handle.build_work_json(root, ns, pid_work=cinematographic_work_pid,
+                                                      original_duration=False,
+                                                      related_identifier=False, original_format=False)
                 if dumpjsons:
-                    json.dump(mets2handle.buildWorkJson(dmdsec, ns, pid_work=cinematographic_work_pid),
-                              open(str(multi_work_number) + 'handlejson.json', 'w', encoding='utf8'),
+                    json.dump(work_json,
+                              open(str(multi_work_number) + 'handle_work.json', 'w', encoding='utf8'),
                               indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload = mets2handle.buildWorkJson(root, ns, pid_work=cinematographic_work_pid,
-                                                    original_duration=False,
-                                                    related_identifier=False, original_format=False)
                 handle_data=[{'type': 'KIP','parsed_data': '21.T11148/31b848e871121c47d064'},
-                       {'type': 'movie_db_works','parsed_data':payload}]
+                       {'type': 'movie_db_works','parsed_data':work_json}]
 
-                response_from_handle_server = requests.put(connection_details['url'] + work_uuid, auth=(
-                    connection_details['user'], connection_details['password']), headers=header,
-                                                           data=json.dumps(handle_data))
+                response_from_handle_server = requests.put(connection_details['url'] + work_uuid,
+                                    auth=(connection_details['user'], connection_details['password']),
+                                    headers=header,
+                                    data=json.dumps(handle_data))
 
                 #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Work-request')
                 print('PID for work: ', response_from_handle_server.json()['handle'])
                 response_from_handle_server.raise_for_status()
 
-                respon = json.loads(response_from_handle_server.text)
+                response = json.loads(response_from_handle_server.text)
                 multi_work_number = multi_work_number + 1
                 if True: # Just to keep diff output short
                     # gets pid from response
-                    pid = respon['handle']
+                    pid = response['handle']
 
             if pid:
                 if True: # Just to keep diff output short

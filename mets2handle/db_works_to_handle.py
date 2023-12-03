@@ -322,12 +322,12 @@ def getOriginal_format(dmdsec, ns):
 
 
 # build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann.
-def buildWorkJson(dmdsec: Element, ns: dict[str, str], pid_work, handleId=True, title=True, series=False, credit=False,
-                  cast=True,
-                  original_duration=True, source=True, source_identifier=False, last_modifed=True,
-                  production_companies=True,
-                  countries_of_reference=True, original_language=False, years_of_reference=True,
-                  related_identifier=True, original_format=True, genre=True):
+def build_work_json(dmdsec: Element, ns: dict[str, str], pid_work, handleId=True, title=True, series=False, credit=False,
+                    cast=True,
+                    original_duration=True, source=True, source_identifier=False, last_modifed=True,
+                    production_companies=True,
+                    countries_of_reference=True, original_language=False, years_of_reference=True,
+                    related_identifier=True, original_format=True, genre=True):
     """
     Erhält als Eingabe ein Xml Element
     Gibt ein Dict zurück, welches die Struktur für eine Json Datei beinhaltet, wie sie das Handle System erwartet.
