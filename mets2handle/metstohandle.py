@@ -10,7 +10,6 @@ import argparse
 import json
 import sys
 import uuid
-from pathlib import Path
 from xml.etree import ElementTree
 
 import requests
@@ -235,7 +234,7 @@ def m2h(filename,
                             f"Parameter version_pid={version_pid} clashes with"
                             f" existing value in {filename}: {existing_pid}.")
                     version_uuid = str(identifier.find('.//dc:identifier', ns).text).strip().split('/')[1]
-                    dataObjectPids.extend(
+                    data_object_pids.extend(
                         helpers.getDAtaObejctPidsFrom_Versionhandle(version_pid, connection_details['url'],
                                                                     connection_details['user'],
                                                                     connection_details['password']))
@@ -248,17 +247,15 @@ def m2h(filename,
             elif not boolean_list_if_pids_exists[1]:
                 version_uuid = str(uuid.uuid4())
                 version_pid = connection_details['prefix'] + '/{}'.format(str(version_uuid))
-                dataObjectPids = [data_object_pid]
-                if dumpjsons:
-                    json.dump(mets2handle.build_version_json(dmdsec, ns, pid_works=cinematographic_work_pids,
-                                                             dataobject_pid=dataObjectPids, version_pid=version_pid),
-                              open('version.json', 'w', encoding='utf8'),
-                              indent=4, sort_keys=False, ensure_ascii=False)
+                data_object_pids = [data_object_pid]
 
-                payload_version = mets2handle.build_version_json(root, ns, pid_works=cinematographic_work_pids,
-                                                                 dataobject_pid=dataObjectPids, version_pid=version_pid)
+                version_json = mets2handle.build_version_json(root, ns, pid_works=cinematographic_work_pids,
+                                                                 dataobject_pid=data_object_pids, version_pid=version_pid)
+                if dumpjsons:
+                    json.dump(version_json,open('version.json', 'w', encoding='utf8'),
+                              indent=4, sort_keys=False, ensure_ascii=False)
                 handle_data_version = [{'type': 'KIP','parsed_data': '21.T11148/ef6836b80e4d64e574e3'},
-                       {'type': 'movie_db_version','parsed_data':payload_version}]
+                       {'type': 'movie_db_version','parsed_data': version_json}]
                 response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(handle_data_version))
@@ -269,8 +266,8 @@ def m2h(filename,
 
                 if True: # Just to keep diff output short
                     # gets pid from response
-                    respon = json.loads(response_from_handle_server.text)
-                    pid = respon['handle']
+                    response = json.loads(response_from_handle_server.text)
+                    pid = response['handle']
             else:
                 pid = existing_pid
             if pid:
@@ -289,13 +286,13 @@ def m2h(filename,
                     xml_tree_modified = True
 
             # Update list of referenced DataObjects
-            old_references = dmdsec.xpath('.//ebucore:hasPart[@formatLabel="hdl.handle.net"]',namespaces=ns)
+            old_references = dmdsec.xpath('.//ebucore:hasPart[@formatLabel="hdl.handle.net"]', namespaces=ns)
             recorded_data_objects = set([
                 str(el.find('.//dc:identifier', ns).text).strip()
                 for el in old_references])
-            if recorded_data_objects != set(dataObjectPids):
+            if recorded_data_objects != set(data_object_pids):
                 insert_here = dmdsec.find('.//ebucore:hasPart', ns)
-                for pid in dataObjectPids:
+                for pid in data_object_pids:
                     insert_here.addprevious(
                         helpers.buildHasPartInXML(pid))
                 if old_references:
@@ -395,7 +392,7 @@ def m2h(filename,
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
 
                 payload_version = mets2handle.build_version_json(root, ns, pid_works=cinematographic_work_pids,
-                                                                 dataobject_pid=dataObjectPids, version_pid=version_pid)
+                                                                 dataobject_pid=data_object_pids, version_pid=version_pid)
                 print(payload_version)
                 print(version_uuid)
                 response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
@@ -406,7 +403,7 @@ def m2h(filename,
 
                 print(response_from_handle_server)
                 response_from_handle_server.raise_for_status()
-    return True  # if successfull
+    return True
 
 
 def cli_entry_point():
