@@ -30,13 +30,14 @@ from lxml.etree import Element
 from mets2handle import helpers
 import pycountry
 
+from datetime import datetime
 
 def getIdentifier(pid_work: str) -> dict[str]:
     """
     DTR: 21.T11148/fae9fd39301eb7e657d4
     """
     handleID = [{'identifier': pid_work.upper()}]
-    return {'type': 'identifiers', 'parsed_data': handleID}
+    return {'identifiers': handleID}
 
 
 def getTitle(dmdsec: ET, ns):
@@ -56,7 +57,7 @@ def getTitle(dmdsec: ET, ns):
         # If already mapped:
         if titlestring in titletypes:
             titlelist.append({'titleValue': title.text, 'titleType': titlestring})
-    return {'type': 'title', 'parsed_data': titlelist}
+    return titlelist
 
 
 def getSeriesName(dmdsec, ns):
@@ -66,13 +67,11 @@ def getSeriesName(dmdsec, ns):
     Existiert kein Serienname ist der Eintrag None
     """
     # TODO: Es gibt noch ungereimtheiten bei den wertelisten sowie mit den identifiern
-    name = " "
+    name = ""
     for title in dmdsec.findall('.//ebucore:alternativeTitle', ns):
         if title.get('typeLabel') == 'series':
             name = title.find('.//dc:title', ns).text
-
-    title = {'type': 'series', 'parsed_data': name}  # 21.T11148/8c45d090913a21d5cac1
-    return title
+    return name
 
 
 def getSource(dmdsec, ns):
@@ -82,8 +81,8 @@ def getSource(dmdsec, ns):
     sources = []
     for source in dmdsec.find('.//ebucore:organisationDetails', ns).findall('.//ebucore:organisationName', ns):
         sources.append({'name': source.text, 'identifier_uri': source.find('..').get('organisationId')})
-    source = {'type': 'source',  # 21.T11148/b33655d6fe2e0e7244de
-              'parsed_data': sources}
+    source = {'source': sources}
+    source = [ {'sourceAttribution': {'attributionDate': datetime.now().replace(microsecond=0).isoformat()+'Z','attributionType': 'Created'},'sourceIdentifier': '21:','sourceName': 'SDK' }]
     return source
 
 
@@ -117,7 +116,7 @@ def getCredits(dmdsec, ns):
                         'role': role.get('typeLabel').capitalize()
                     })
 
-    return {'type': 'credits', 'parsed_data': credits_list}  # 21.T11148/66c22fad3a990a40eb2b
+    return credits_list
 
 
 def getCast(dmdsec, ns):
@@ -139,7 +138,7 @@ def getCast(dmdsec, ns):
                 cast.append({'name': {'family-name': name[0], 'given-name': name[1].strip()}, })
     if len(cast) == 0:
         return None
-    return {'type': 'cast', 'parsed_data': cast}  # 21.T11148/39aa12e6d633fbb40d65
+    return cast
 
 
 def getOriginal_duration(dmdsec: Element, ns: dict) -> Union[dict, None]:
@@ -150,9 +149,9 @@ def getOriginal_duration(dmdsec: Element, ns: dict) -> Union[dict, None]:
     duration = dmdsec.find('.//ebucore:duration', ns)
     if duration is not None and duration.get('typeLabel') == 'originalDuration':
         time = duration.find('.//ebucore:normalPlayTime', ns).text
-        return {'type': 'originalDuration', 'parsed_data': {'original_duration': time}}
+        return {'original_duration': time}
 
-    return None
+    return ""
 
 
 def getSource_identifier(dmdsec, ns):
@@ -160,8 +159,7 @@ def getSource_identifier(dmdsec, ns):
     21.T11148/4f79cf79777ae7c379fe
     Findet die identifier id/url der Hauptorganisation die dieses Werk verwaltet
     """
-    return {'type': 'sourceIdentifier',
-            'parsed_data': dmdsec.find('.//ebucore:organisationDetails', ns).get('organisationId')}
+    return dmdsec.find('.//ebucore:organisationDetails', ns).get('organisationId')
 
 
 def getLast_modified(dmdsec, ns):
@@ -172,11 +170,9 @@ def getLast_modified(dmdsec, ns):
     date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("Z")
     uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('Z')
 
-    time= date[0] + ' ' + uhrzeit[0]
-    
+    time = date[0] + ' ' + uhrzeit[0]
 
-
-    return {'type': 'lastModified', 'parsed_data': time}
+    return time
 
 
 def getProduction_companies(dmdsec, ns):
@@ -189,10 +185,10 @@ def getProduction_companies(dmdsec, ns):
     company = ' '
     # platzhalter companielist nicht zu finden in xml
 
-    if len(companies) == 0:
-        return None
+    #if len(companies) == 0:
+    #    return None
 
-    return {'type': 'productionCompanies', 'parsed_data': [{'production_company': companies}]}
+    return [{'identifier_uri': 'http://gwdg.de', 'name':'TESTNAME'}]
 
 
 def getOriginal_language(dmdsec, ns):
@@ -206,10 +202,8 @@ def getOriginal_language(dmdsec, ns):
         original_languages.append(lan.find('.//dc:language', ns).text)
     if not len(original_languages):
         return None
-
     # platzhalter nicht klar im xml
-    return {'type': 'originalLanguage', 'parsed_data': original_languages}
-
+    return original_languages
 
 def getCountries_of_reference(dmdsec, ns):
     """
@@ -251,21 +245,22 @@ def getCountries_of_reference(dmdsec, ns):
                                          + country_hits[0].alpha_2 + '" but might not be correct')
                     landlist.append(country_hits[0].alpha_2)
 
-    return {'type': 'countryOfReference', 'parsed_data': landlist}
+    return landlist
 
 
 def getYears_of_reference(dmdsec, ns):  # wird eventuell noch abgeändert
     """
     Findet den Erstellsungszeitraum hier benannt year of reference
     21.T11148/089d6db63cf69c35930d
+    ISSUES: referenceType nicht gegeben aber immer created ?
     """
     yearOfReferenceTypes = helpers.getEnumFromType('21.T11148/03dfc92c55cea3e18920')
-
-    years = [{'startYear': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear"),
-              'endYear': dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("endYear"),
-              'referenceType': 'created'}]  # referenceType nicht gegeben aber immer created ?
-
-    return {'type': 'yearOfReference', 'parsed_data': years}
+    start_year = dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("startYear")
+    end_year = dmdsec.find(".//ebucore:date", ns).find(".//ebucore:created", ns).get("endYear")
+    years = [{'yearOfReferenceStart': start_year,
+              'yearOfReferenceEnd': end_year,
+              'yearOfReferenceType': 'Created'}]
+    return years
 
 
 def getRelated_identifier(dmdsec, ns):  # was bedeute das comment?
@@ -278,7 +273,7 @@ def getRelated_identifier(dmdsec, ns):  # was bedeute das comment?
     # identifiertlist = []
     # for identifier in dmdsec.findall('.//ebucore:identifier',ns):
     # identifiertlist.append( {'relatedIdentifierValue': identifier.find('.//dc:identifier',ns).text , 'relatedIdentifiertType':identifier.get('formatLabel')}) #immer other? oder doch format label?)
-    return {'type': 'relatedIdentifier', 'parsed_data': {'relatedIdentifierValue': ' ', 'relatedIdentifierType': ' '}}
+    return {'relatedIdentifierValue': ' ', 'relatedIdentifierType': ' '}
 
 
 def getGenre(dmdsec, ns):
@@ -296,7 +291,8 @@ def getGenre(dmdsec, ns):
             helpers.logger.error('WORK: Genre "' + genrestring + '" not in vocab_map.json')
         if genrestring in genres:
             genrelist.append(genrestring)
-    return {'type': 'genre', 'parsed_data': genrelist}
+    print(genrelist, '------')
+    return genrelist
 
 
 def getOriginal_format(dmdsec, ns):
@@ -323,12 +319,13 @@ def getOriginal_format(dmdsec, ns):
                 parsed_data[f"{prefix}Material{suffix}"] = val
     if not parsed_data:
         return None
-    return {'type': 'originalFormat', 'parsed_data': parsed_data}
+    return parsed_data
 
 
 # build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann.
-def buildWorkJson(dmdsec: Element, ns: dict[str,str], pid_work, handleId=True, title=True, series=False, credit=False, cast=True,
-                  original_duration=True, Source=True, source_identifier=False, last_modifed=True,
+def buildWorkJson(dmdsec: Element, ns: dict[str, str], pid_work, handleId=True, title=True, series=False, credit=False,
+                  cast=True,
+                  original_duration=True, source=True, source_identifier=False, last_modifed=True,
                   production_companies=True,
                   countries_of_reference=True, original_language=False, years_of_reference=True,
                   related_identifier=True, original_format=True, genre=True):
@@ -340,62 +337,42 @@ def buildWorkJson(dmdsec: Element, ns: dict[str,str], pid_work, handleId=True, t
     Standardmäßig werden alle Blöcke ausgegeben
     TODO set originallanguage to true when regex is fixed
     """
-    json = dict()
-    values = []
+    values = {}
+
     # if handleId:
     #  values.append(getIdentifier (pid_work))
 
     if title:
-        values.append(getTitle(dmdsec, ns))
-
+        values['title'] = getTitle(dmdsec, ns)
     if series:
-        values.append(getSeriesName(dmdsec, ns))
-
+        values['series'] = getSeriesName(dmdsec, ns)
     if credit:
-        values.append(getCredits(dmdsec, ns))
-
+        values['credits'] = getCredits(dmdsec, ns)
     if cast:
-        values.append(getCast(dmdsec, ns))
-
+        values['cast'] = getCast(dmdsec, ns)
     if original_duration:
-        values.append(getOriginal_duration(dmdsec, ns))
-
-    if Source:
-        values.append(getSource(dmdsec, ns))
-
+        values['originalDuration'] = getOriginal_duration(dmdsec, ns)
+    if source:
+        values['source'] = getSource(dmdsec, ns)
     if source_identifier:
-        values.append(getSource_identifier(dmdsec, ns))
-
+        values['sourceIdentifier'] = getSource_identifier(dmdsec, ns)
     if last_modifed:
-        values.append(getLast_modified(dmdsec, ns))
-
+        values['lastModified'] = getLast_modified(dmdsec, ns)
     if production_companies:
-        values.append(getProduction_companies(dmdsec, ns))
-
+        values['productionCompany'] = getProduction_companies(dmdsec, ns)
     if countries_of_reference:
-        values.append(getCountries_of_reference(dmdsec, ns))
-
+        values['countryOfReference'] = getCountries_of_reference(dmdsec, ns)
     if original_language:
-        values.append(getOriginal_language(dmdsec, ns))
-
+        values['originalLanguage'] = getOriginal_language(dmdsec, ns)
     if years_of_reference:
-        values.append(getYears_of_reference(dmdsec, ns))
-
+        values['yearOfReference'] = getYears_of_reference(dmdsec, ns)
     if related_identifier:
-        values.append(getRelated_identifier(dmdsec, ns))
-
+        values['relatedIdentifier'] = getRelated_identifier(dmdsec, ns)
     if original_format:
-        values.append(getOriginal_format(dmdsec, ns))
-
+        values['originalFormat'] = getOriginal_format(dmdsec, ns)
     if genre:
-        values.append(getGenre(dmdsec, ns))
-
-    values.append({'type': 'KernelInformationProfile',
-                   'parsed_data': '21.T11148/31b848e871121c47d064'})
-
-    json = [value for value in values if value is not None]
-
-    return json
+        values['genre'] = getGenre(dmdsec, ns)
+    return values
 
 
 def create_identifier_element(pid: str):

@@ -90,8 +90,7 @@ def m2h(filename,
                 key, value = line.strip().split("|")
                 connection_details[key] = value
 
-    header = {'accept': 'application/json', 'If-None-Match': 'default', 'If-Match': 'default',
-              'Content-Type': 'application/json'}
+    header = {'accept': 'application/json', 'Content-Type': 'application/json'}
 
     multiworkno = 0  # counter to enumerate the files that result from the json dump for multiworks
 
@@ -161,8 +160,8 @@ def m2h(filename,
             pid = None
             # TODO: hier abfrage, ob Werk bereits Pid hat
 
-            for identifier in dmdsec.findall('.//ebucore:identifier',
-                                             ns):  # checks if work has a existing pid. if thats the case we add a 1 to the boolean array
+            for identifier in dmdsec.findall('.//ebucore:identifier', ns):
+                # checks if work has a existing pid. if that is the case we add a 1 to the boolean array
                 if identifier.get('formatLabel') == "hdl.handle.net":
                     boolean_list_if_pids_exists[0] = 1
                     cinematographic_work_pids.append(str(identifier.find('.//dc:identifier', ns).text).strip())
@@ -188,11 +187,14 @@ def m2h(filename,
                 payload = mets2handle.buildWorkJson(root, ns, pid_work=cinematographic_work_pid,
                                                     original_duration=False,
                                                     related_identifier=False, original_format=False)
+                handle_data=[{'type': 'KIP','parsed_data': '21.T11148/31b848e871121c47d064'},
+                       {'type': 'movie_db_works','parsed_data':payload}]
+
                 response_from_handle_server = requests.put(connection_details['url'] + work_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
-                                                           data=json.dumps(payload))
+                                                           data=json.dumps(handle_data))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Work-request')
+                #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Work-request')
                 response_from_handle_server.raise_for_status()
 
                 respon = json.loads(response_from_handle_server.text)
@@ -256,12 +258,13 @@ def m2h(filename,
 
                 payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
                                                                dataobject_pid=dataObjectPids, version_pid=version_pid)
-
+                handle_data_version = [{'type': 'KIP','parsed_data': '21.T11148/ef6836b80e4d64e574e3'},
+                       {'type': 'movie_db_version','parsed_data':payload_version}]
                 response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
-                                                           data=json.dumps(payload_version))
+                                                           data=json.dumps(handle_data_version))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Version-request')
+                #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Version-request')
                 response_from_handle_server.raise_for_status()
 
                 if True: # Just to keep diff output short
@@ -286,8 +289,7 @@ def m2h(filename,
                     xml_tree_modified = True
 
             # Update list of referenced DataObjects
-            old_references = dmdsec.xpath(
-                './/ebucore:hasPart[@formatLabel="hdl.handle.net"]', ns)
+            old_references = dmdsec.xpath('.//ebucore:hasPart[@formatLabel="hdl.handle.net"]',namespaces=ns)
             recorded_data_objects = set([
                 str(el.find('.//dc:identifier', ns).text).strip()
                 for el in old_references])
@@ -325,12 +327,13 @@ def m2h(filename,
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
-
+                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
+                handle_data_object = [{'type': 'KIP', 'parsed_data': '21.T11148/b0047df54c686b9df82a'},
+                                       {'type': 'movie_db_dataobjects', 'parsed_data': payload_object}]
                 # Create PID
                 response_from_handle_server = requests.put(connection_details['url'] + data_object_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
-                                                           data=json.dumps(payload))
+                                                           data=json.dumps(handle_data_object))
 
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
                 response_from_handle_server.raise_for_status()
@@ -360,12 +363,13 @@ def m2h(filename,
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
-
+                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
+                handle_data_object = [{'type': 'KIP', 'parsed_data': '21.T11148/b0047df54c686b9df82a'},
+                                      {'type': 'movie_db_dataobjects', 'parsed_data': payload_object}]
                 # Create PID
                 response_from_handle_server = requests.put(connection_details['url'] + data_object_uuid, auth=(
                     connection_details['user'], connection_details['password']), headers=header,
-                                                           data=json.dumps(payload))
+                                                           data=json.dumps(handle_data_object))
 
                 print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
                 response_from_handle_server.raise_for_status()

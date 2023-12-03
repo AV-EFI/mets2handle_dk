@@ -47,8 +47,7 @@ def isVersionOf(pids_of_works):
     Mandatory,repeatable
     enthält die PID(s) vom Werk
     '''
-    versions = pids_of_works
-    return {'type': 'is_version_of', 'parsed_data': versions}
+    return pids_of_works
 
 
 def hasDataObject(dataobjectpid: list):
@@ -58,14 +57,12 @@ def hasDataObject(dataobjectpid: list):
     #
     if not isinstance(dataobjectpid, list):
         dataobjectpid = [dataobjectpid]
-    return {'type': 'has_data_objects', 'parsed_data': dataobjectpid}
-
+    return dataobjectpid
 
 def sameAs(dmdsec, ns):
-    objects = [
-        '21.T11148/ef19de26cec8cae78ceb']  # platzhalter pid auf same_as Registry -> aktuell nicht im mets zu finden
-    return {'type': 'same_as', 'parsed_data': objects}
-
+    objects = ['21.T11148/ef19de26cec8cae78ceb']
+    # platzhalter pid auf same_as Registry -> aktuell nicht im mets zu finden
+    return objects
 
 def titles(dmdsec, ns):
     # Allowed titles are at the moment equal to the titles used in "work"
@@ -82,8 +79,7 @@ def titles(dmdsec, ns):
         # If already mapped:
         if titlestring in titletypes:
             titlelist.append({'titleValue': title.text, 'titleType': titlestring})
-    return {'type': 'title', 'parsed_data': titlelist}
-
+    return titlelist
 
 def releaseDate(dmdsec, ns):
     # Release data has to be given in YYYY-MM-DD
@@ -93,10 +89,9 @@ def releaseDate(dmdsec, ns):
         helpers.logger.error('VERSION: No release date found')
         releasedate = '1000'
     # if only year is given, we apped -01-01
-    if len(releasedate)<4:
+    if len(releasedate)==4:
         releasedate = releasedate + '-01-01'
-    return ({'type': 'release_date', 'parsed_data': releasedate})
-
+    return releasedate
 
 def getYearsOfReference(dmdsec, ns):
     """
@@ -112,7 +107,6 @@ def getYearsOfReference(dmdsec, ns):
         helpers.logger.error('VERSION: yearOfReference not found')
         return None
 
-
 def getManifestationType(dmdsec, ns):
     # Implements: 21.T11148/c72633267da87f952971
     typelist = []
@@ -125,7 +119,7 @@ def getManifestationType(dmdsec, ns):
         else:
             helpers.logger.error('VERSION: manifestationType "' + typestring + '" not in the list')
             typelist.append('Unknown')
-    return {'type': 'manifestation_types', 'parsed_data': typelist}
+    return typelist
 
 
 def getHasAgent(dmdsec, ns):
@@ -134,19 +128,16 @@ def getHasAgent(dmdsec, ns):
     for companie in dmdsec.findall('.//ebucore_contributor', ns):
         data.append({'name': companie.find('.//ebucore:organisationDetails//ebucore:organisationName', ns).text,
                      'identifier_uri': companie.find('.//ebucore:organisationDetails', ns).get('organisationID')})
-    return {'type': 'has_agent', 'parsed_data': data}
+    return data
 
 
 def getSources(dmdsec, ns):
     # Implements: 21.T11148/828d338a9b04221c9cbe
     dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns)
-    source = {'type': 'source',
-              'parsed_data': {'name': dmdsec.find(
-                  './/ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns).text,
-                              'identifier_uri': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',
-                                                            ns).get('organisationId')}}
-    return source
+    source = {'sourceName': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns).text,}
 
+    # 'identifier_uri': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',ns).get('organisationId')
+    return source
 
 def getLast_modified(dmdsec, ns):
     # Implements: 21.T11148/a27923f25913583b1ea6
@@ -158,50 +149,35 @@ def getLast_modified(dmdsec, ns):
     uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('Z')
 
     time= date[0] + ' ' + uhrzeit[0]
-    return {'type': 'last_modified', 'parsed_data': time}
-
+    return time
 
 def buildVersionJson(dmdsec, ns, pid_works, dataobject_pid: list(), version_pid, lastModified=True, Sources=True,
                      HasAgent=True, ManfiestationType=True, YearsofReference=True, releasedate=True, sameas=True,
                      title=False, DataObject=True, VerisonOf=True, identifier=True):
     json = dict()
-    values = []
+    values = {}
     # if identifier:
     # values.append(getIdentifier(version_pid))
 
     if VerisonOf:
-        values.append(isVersionOf(pid_works))
-
-    if DataObject:
-        values.append(hasDataObject(dataobject_pid))
-
-    if title:
-        values.append(titles(dmdsec, ns))
-
+        values['is_version_of'] = pid_works
     if sameas:
-        values.append(sameAs(dmdsec, ns))
-
+        values['same_as'] = sameAs(dmdsec, ns)
+    if DataObject:
+        values['has_data_objects'] = hasDataObject(dataobject_pid)
+    if title:
+        values['title'] = titles(dmdsec, ns)
     if releasedate:
-        values.append(releaseDate(dmdsec, ns))
-
-    if YearsofReference:
-        values.append(getYearsOfReference(dmdsec, ns))
-
+        values['release_date'] = releaseDate(dmdsec, ns)
+#  FixMe   if YearsofReference:
+#  FixMe      values['production_year'] = getYearsOfReference(dmdsec, ns)
     if ManfiestationType:
-        values.append(getManifestationType(dmdsec, ns))
-
+        values['manifestation_types'] = getManifestationType(dmdsec, ns)
     if HasAgent:
-        values.append(getHasAgent(dmdsec, ns))
-
+        values['has_agent'] = getHasAgent(dmdsec, ns)
     if Sources:
-        values.append(getSources(dmdsec, ns))
-
+        values['source'] = getSources(dmdsec, ns)
     if lastModified:
-        values.append(getLast_modified(dmdsec, ns))
+        values['last_modified'] = getLast_modified(dmdsec, ns)
 
-    values.append({'type': 'KernelInformationProfile',
-                   'parsed_data': '21.T11148/ef6836b80e4d64e574e3'})
-
-    json = [value for value in values if value is not None]
-
-    return json
+    return values

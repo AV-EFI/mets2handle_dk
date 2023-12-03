@@ -11,16 +11,13 @@ __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
 __license__ = "GPL"
 __version__ = "3.0"
 
-from lxml import etree as ET
-import uuid
-
+from datetime import datetime
 
 def specific_Carrier_type(dmdsec, ns):
     for description in dmdsec.findall('.//ebucore:description', ns):
         if description.get('typeLabel') == 'specificCarrierType':
             carrier = description.find('.//dc:description', ns).text
-            return {'type': 'specific_carrier_type', 'parsed_data': carrier}
-
+            return carrier
 
 def perservationAccessStatus(dmdsec, ns):
     for description in dmdsec.findall('.//ebucore:description', ns):
@@ -28,21 +25,20 @@ def perservationAccessStatus(dmdsec, ns):
             status = description.find('.//dc:description', ns).text
             return {'type': 'preservation_access_status', 'parsed_data': status}
 
-
-def sumplementaryInformation(dmdsec, ns):
+def supplementaryInformation(dmdsec, ns):
     for description in dmdsec.findall('.//ebucore:description', ns):
         if description.get('typeLabel') == 'comment':
             information = description.find('.//dc:description', ns).text
-
+            return information
+    return 'teststring'
 
 def item_file_size(dmdsec, ns):
     if dmdsec.find('.//ebucore:format//ebucore:fileSize', ns) is not None:
         size = dmdsec.find('.//ebucore:format//ebucore:fileSize', ns).text
         unit = dmdsec.find('.//ebucore:format//ebucore:fileSize', ns).get('unit')
-        return {'type': 'item_file_size', 'parsed_data': str(size) + str(unit)}
+        return str(size) + str(unit)
     else:
         return None
-
 
 def languages(dmdsec, ns):
     # will change
@@ -55,6 +51,16 @@ def languages(dmdsec, ns):
         language_version.append(language.get('typeLabel'))
     return {'type': 'language_versions', 'parsed_data': language_version}
 
+def getSource(dmdsec, ns):
+    """
+    Findet den Namen der Organisation, welche das Werk verwaltet
+    """
+    sources = []
+    for source in dmdsec.find('.//ebucore:organisationDetails', ns).findall('.//ebucore:organisationName', ns):
+        sources.append({'name': source.text, 'identifier_uri': source.find('..').get('organisationId')})
+    source = {'source': sources}
+    source =  {'sourceAttribution': {'attributionDate': datetime.now().replace(microsecond=0).isoformat()+'Z','attributionType': 'Created'},'sourceIdentifier': '21:','sourceName': 'SDK' }
+    return source
 
 def getLast_modified(dmdsec, ns) -> dict[str,str]:
     """
@@ -66,31 +72,28 @@ def getLast_modified(dmdsec, ns) -> dict[str,str]:
 
     time= date[0] + ' ' + uhrzeit[0]
 
-    return {'type': 'last_modified', 'parsed_data': time}
-
+    return time
 
 def getIdentifier(identifier: str) -> dict[str,str]:
     '''
     21.T11148/fae9fd39301eb7e657d4
     '''
-    work_pid = '21.T11148/{}'.format(str(uuid.uuid4()))
     # identifier= dmdsec.find('.//ebucore:identifiert',ns).find('.//dc:identifier',ns).text
-    return {'type': 'identifier', 'parsed_data': {'identifier': identifier.upper()}}
+    return '21.123/123'
 
 
 def buildData_Object_Json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: str) -> list[dict]:
-    values = [{'type': 'is_data_object_of', 'parsed_data': workpid},
-              getLast_modified(dmdsec, ns),
-              {'type': 'source', 'parsed_data': {'name': 'no metadata provider in mets'}}, #TODO should be DK
-              item_file_size(dmdsec, ns),
-              sumplementaryInformation(dmdsec, ns),
-              specific_Carrier_type(dmdsec, ns),
-              {'type': 'KernelInformationProfile', 'parsed_data': '21.T11148/b0047df54c686b9df82a'}]
-
-    # values.append(getIdentifier(dataobjectPid))
+    values = {}
+    values['item_file_size'] = item_file_size(dmdsec, ns)
+    values['specific_carrier_type'] = specific_Carrier_type(dmdsec, ns)
+    values['supplementary_information'] = supplementaryInformation(dmdsec, ns)
+    # Nr 7
+    values['is_data_object_of'] = getIdentifier(dataobjectPid)
+    # Nr 10
+    values['source'] = getSource(dmdsec, ns)
+    # Nr 11
+    values['last_modified'] = getLast_modified(dmdsec, ns)
     # values.append(languages(dmdsec,ns)) will change soon
     # values.append(perservationAccessStatus(dmdsec,ns)) TODO uncomment as soon as enum list is ready
 
-    data_object = [value for value in values if value is not None]
-
-    return data_object
+    return values
