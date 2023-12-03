@@ -291,7 +291,6 @@ def getGenre(dmdsec, ns):
             helpers.logger.error('WORK: Genre "' + genrestring + '" not in vocab_map.json')
         if genrestring in genres:
             genrelist.append(genrestring)
-    print(genrelist, '------')
     return genrelist
 
 

@@ -1,4 +1,4 @@
-'''
+"""""
 This module implements the creation of the PID records for the manifestion/version.
 
 It is designed to map the values from the METS XML files to the required values.
@@ -18,7 +18,7 @@ PID system.
 The Metadata follow the definitions of
 Manifestation: https://dtr-test.pidconsortium.net/#objects/21.T11148/ef6836b80e4d64e574e3
 
-'''
+"""
 __author__ = "Henry Beiker, Sven Bingert"
 __maintainer__ = "Sven Bingert"
 __copyright__ = "Copyright 2023, Stiftung Deutsche Kinemathek"
@@ -32,25 +32,25 @@ ns = {"mets": "http://www.loc.gov/METS/", "xlink": "http://www.w3.org/1999/xlink
       "dc": "http://purl.org/dc/elements/1.1/"}
 
 
-def getIdentifier(workPid: str):
-    '''
+def get_identifier_version(workPid: str):
+    """
     21.T11148/fae9fd39301eb7e657d4
-    '''
+    """
     # work_pid='21.T11148/{}'.format(str(uuid.uuid4()))
     # identifier= dmdsec.find('.//ebucore:identifiert',ns).find('.//dc:identifier',ns).text
     return {'type': 'identifier', 'parsed_data': workPid.upper()}
 
 
-def isVersionOf(pids_of_works):
-    '''
+def get_is_version_of(pids_of_works):
+    """
     21.T11148/ef19de26cec8cae78ceb
     Mandatory,repeatable
     enthält die PID(s) vom Werk
-    '''
+    """
     return pids_of_works
 
 
-def hasDataObject(dataobjectpid: list):
+def get_has_data_object(dataobjectpid: list):
     # geht davon aus, dass es nur ein dataobject pro mets gibt!
     for dataobject in dataobjectpid:
         dataobject = dataobject.upper()
@@ -59,12 +59,14 @@ def hasDataObject(dataobjectpid: list):
         dataobjectpid = [dataobjectpid]
     return dataobjectpid
 
-def sameAs(dmdsec, ns):
+
+def get_same_as(dmdsec, ns):
     objects = ['21.T11148/ef19de26cec8cae78ceb']
     # platzhalter pid auf same_as Registry -> aktuell nicht im mets zu finden
     return objects
 
-def titles(dmdsec, ns):
+
+def get_titles(dmdsec, ns):
     # Allowed titles are at the moment equal to the titles used in "work"
     # Thus it is the same function as in db_works_to_handle
     titlelist = []
@@ -81,7 +83,8 @@ def titles(dmdsec, ns):
             titlelist.append({'titleValue': title.text, 'titleType': titlestring})
     return titlelist
 
-def releaseDate(dmdsec, ns):
+
+def get_release_date(dmdsec, ns):
     # Release data has to be given in YYYY-MM-DD
     try:
         releasedate = dmdsec.find('.//ebucore:date//ebucore:released', ns).get('year')
@@ -89,11 +92,12 @@ def releaseDate(dmdsec, ns):
         helpers.logger.error('VERSION: No release date found')
         releasedate = '1000'
     # if only year is given, we apped -01-01
-    if len(releasedate)==4:
+    if len(releasedate) == 4:
         releasedate = releasedate + '-01-01'
     return releasedate
 
-def getYearsOfReference(dmdsec, ns):
+
+def get_years_of_reference(dmdsec, ns):
     """
     Findet den Erstellsungszeitraum hier benannt year of reference
     21.T11148/089d6db63cf69c35930d
@@ -107,7 +111,8 @@ def getYearsOfReference(dmdsec, ns):
         helpers.logger.error('VERSION: yearOfReference not found')
         return None
 
-def getManifestationType(dmdsec, ns):
+
+def get_manifestation_type(dmdsec, ns):
     # Implements: 21.T11148/c72633267da87f952971
     typelist = []
     manifestationTypes = helpers.getEnumFromType('21.T11148/567d070dfa708072819b')
@@ -122,7 +127,7 @@ def getManifestationType(dmdsec, ns):
     return typelist
 
 
-def getHasAgent(dmdsec, ns):
+def get_has_agent(dmdsec, ns):
     # Implements: 21.T11148/5a69721cca16545c03e6
     data = []
     for companie in dmdsec.findall('.//ebucore_contributor', ns):
@@ -131,15 +136,18 @@ def getHasAgent(dmdsec, ns):
     return data
 
 
-def getSources(dmdsec, ns):
+def get_sources(dmdsec, ns):
     # Implements: 21.T11148/828d338a9b04221c9cbe
     dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns)
-    source = {'sourceName': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName', ns).text,}
+    source = {
+        'sourceName': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails//ebucore:organisationName',
+                                  ns).text, }
 
     # 'identifier_uri': dmdsec.find('.//ebucore:metadataProvider//ebucore:organisationDetails',ns).get('organisationId')
     return source
 
-def getLast_modified(dmdsec, ns):
+
+def get_last_modified(dmdsec, ns):
     # Implements: 21.T11148/a27923f25913583b1ea6
     """
     Findet das Datum  an dem die Mets Datei zuletzt verändert wurde.
@@ -148,12 +156,13 @@ def getLast_modified(dmdsec, ns):
     date = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('dateLastModified').split("Z")
     uhrzeit = dmdsec.find('.//ebucore:ebuCoreMain', ns).get('timeLastModified').split('Z')
 
-    time= date[0] + ' ' + uhrzeit[0]
+    time = date[0] + ' ' + uhrzeit[0]
     return time
 
-def buildVersionJson(dmdsec, ns, pid_works, dataobject_pid: list(), version_pid, lastModified=True, Sources=True,
-                     HasAgent=True, ManfiestationType=True, YearsofReference=True, releasedate=True, sameas=True,
-                     title=False, DataObject=True, VerisonOf=True, identifier=True):
+
+def build_version_json(dmdsec, ns, pid_works, dataobject_pid: list, version_pid, lastModified=True, Sources=True,
+                       HasAgent=True, ManfiestationType=True, YearsofReference=True, releasedate=True, sameas=True,
+                       title=False, DataObject=True, VerisonOf=True, identifier=True):
     json = dict()
     values = {}
     # if identifier:
@@ -162,22 +171,22 @@ def buildVersionJson(dmdsec, ns, pid_works, dataobject_pid: list(), version_pid,
     if VerisonOf:
         values['is_version_of'] = pid_works
     if sameas:
-        values['same_as'] = sameAs(dmdsec, ns)
+        values['same_as'] = get_same_as(dmdsec, ns)
     if DataObject:
-        values['has_data_objects'] = hasDataObject(dataobject_pid)
+        values['has_data_objects'] = get_has_data_object(dataobject_pid)
     if title:
-        values['title'] = titles(dmdsec, ns)
+        values['title'] = get_titles(dmdsec, ns)
     if releasedate:
-        values['release_date'] = releaseDate(dmdsec, ns)
-#  FixMe   if YearsofReference:
-#  FixMe      values['production_year'] = getYearsOfReference(dmdsec, ns)
+        values['release_date'] = get_release_date(dmdsec, ns)
+    #  FixMe   if YearsofReference:
+    #  FixMe      values['production_year'] = getYearsOfReference(dmdsec, ns)
     if ManfiestationType:
-        values['manifestation_types'] = getManifestationType(dmdsec, ns)
+        values['manifestation_types'] = get_manifestation_type(dmdsec, ns)
     if HasAgent:
-        values['has_agent'] = getHasAgent(dmdsec, ns)
+        values['has_agent'] = get_has_agent(dmdsec, ns)
     if Sources:
-        values['source'] = getSources(dmdsec, ns)
+        values['source'] = get_sources(dmdsec, ns)
     if lastModified:
-        values['last_modified'] = getLast_modified(dmdsec, ns)
+        values['last_modified'] = get_last_modified(dmdsec, ns)
 
     return values

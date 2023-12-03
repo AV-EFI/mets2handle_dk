@@ -9,9 +9,6 @@ __version__ = "3.0"
 import argparse
 import json
 import sys
-# import db_works_to_handle as xj
-# import .db_version_to_handle as vh
-# import .db_data_object_to_handle as oh
 import uuid
 from pathlib import Path
 from xml.etree import ElementTree
@@ -28,8 +25,7 @@ Dies ist ein Python-Code, der ein METS-Dokument (Metadata Encoding and
 Transmission Standard) verarbeitet und bestimmte Teile davon in JSON-Objekte 
 umwandelt, die dann an einen Handle-Server gesendet werden. Der Handle-Server 
 ist ein System zur Zuweisung von persistenten Identifikatoren (Handles) zu 
-digitalen Objekten, um ihre Langzeitarchivierung und -verfügbarkeit zu g
-ewährleisten.
+digitalen Objekten, um ihre Langzeitarchivierung und -verfügbarkeit zu gewährleisten.
 
 Die wichtigsten Bibliotheken, die in diesem Code verwendet werden, sind:
 * lxml.etree zum Parsen des METS-Dokuments
@@ -195,6 +191,7 @@ def m2h(filename,
                                                            data=json.dumps(handle_data))
 
                 #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Work-request')
+                print('PID for work: ', response_from_handle_server.json()['handle'])
                 response_from_handle_server.raise_for_status()
 
                 respon = json.loads(response_from_handle_server.text)
@@ -251,13 +248,13 @@ def m2h(filename,
                 version_pid = '21.T11998/{}'.format(str(version_uuid))
                 dataObjectPids = [dataobject_Pid]
                 if dumpjsons:
-                    json.dump(mets2handle.buildVersionJson(dmdsec, ns, pid_works=cinematographic_work_pids,
-                                                           dataobject_pid=dataObjectPids, version_pid=version_pid),
+                    json.dump(mets2handle.build_version_json(dmdsec, ns, pid_works=cinematographic_work_pids,
+                                                             dataobject_pid=dataObjectPids, version_pid=version_pid),
                               open('version.json', 'w', encoding='utf8'),
                               indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
-                                                               dataobject_pid=dataObjectPids, version_pid=version_pid)
+                payload_version = mets2handle.build_version_json(root, ns, pid_works=cinematographic_work_pids,
+                                                                 dataobject_pid=dataObjectPids, version_pid=version_pid)
                 handle_data_version = [{'type': 'KIP','parsed_data': '21.T11148/ef6836b80e4d64e574e3'},
                        {'type': 'movie_db_version','parsed_data':payload_version}]
                 response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
@@ -265,6 +262,7 @@ def m2h(filename,
                                                            data=json.dumps(handle_data_version))
 
                 #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-Version-request')
+                print('PID for version: ', response_from_handle_server.json()['handle'])
                 response_from_handle_server.raise_for_status()
 
                 if True: # Just to keep diff output short
@@ -335,7 +333,8 @@ def m2h(filename,
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(handle_data_object))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
+                #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
+                print('PID for data object: ', response_from_handle_server.json()['handle'])
                 response_from_handle_server.raise_for_status()
                 if True: # Just to keep diff output short
                     respon = json.loads(response_from_handle_server.text)
@@ -371,7 +370,8 @@ def m2h(filename,
                     connection_details['user'], connection_details['password']), headers=header,
                                                            data=json.dumps(handle_data_object))
 
-                print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
+                #print(response_from_handle_server.text, response_from_handle_server.status_code, 'Response to create-DataObject-request')
+                print('PID for data object: ', response_from_handle_server.json()['handle'])
                 response_from_handle_server.raise_for_status()
                 if True: # Just to keep diff output short
                     respon = json.loads(response_from_handle_server.text)
@@ -392,8 +392,8 @@ def m2h(filename,
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
 
-                payload_version = mets2handle.buildVersionJson(root, ns, pid_works=cinematographic_work_pids,
-                                                               dataobject_pid=dataObjectPids, version_pid=version_pid)
+                payload_version = mets2handle.build_version_json(root, ns, pid_works=cinematographic_work_pids,
+                                                                 dataobject_pid=dataObjectPids, version_pid=version_pid)
                 print(payload_version)
                 print(version_uuid)
                 response_from_handle_server = requests.put(connection_details['url'] + version_uuid, auth=(
