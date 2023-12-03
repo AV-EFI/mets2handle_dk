@@ -32,7 +32,8 @@ import pycountry
 
 from datetime import datetime
 
-def getIdentifier(pid_work: str) -> dict[str]:
+
+def get_identifier(pid_work: str) -> dict[str]:
     """
     DTR: 21.T11148/fae9fd39301eb7e657d4
     """
@@ -40,7 +41,7 @@ def getIdentifier(pid_work: str) -> dict[str]:
     return {'identifiers': handleID}
 
 
-def getTitle(dmdsec: ET, ns):
+def get_title(dmdsec: ET, ns):
     """
     Find the Title of the work
     DTR: 21.T11148/4b18b74f5ed1441bc6a3
@@ -60,7 +61,7 @@ def getTitle(dmdsec: ET, ns):
     return titlelist
 
 
-def getSeriesName(dmdsec, ns):
+def get_series_name(dmdsec, ns):
     """
     Use series name if given, otherwise set to none.
     Wenn das Werk einen Seriennamen besitzt, dann wird diser hiermit gefunden.
@@ -74,7 +75,7 @@ def getSeriesName(dmdsec, ns):
     return name
 
 
-def getSource(dmdsec, ns):
+def get_source(dmdsec, ns):
     """
     Findet den Namen der Organisation, welche das Werk verwaltet
     """
@@ -82,11 +83,12 @@ def getSource(dmdsec, ns):
     for source in dmdsec.find('.//ebucore:organisationDetails', ns).findall('.//ebucore:organisationName', ns):
         sources.append({'name': source.text, 'identifier_uri': source.find('..').get('organisationId')})
     source = {'source': sources}
-    source = [ {'sourceAttribution': {'attributionDate': datetime.now().replace(microsecond=0).isoformat()+'Z','attributionType': 'Created'},'sourceIdentifier': '21:','sourceName': 'SDK' }]
+    source = [{'sourceAttribution': {'attributionDate': datetime.now().replace(microsecond=0).isoformat() + 'Z',
+                                     'attributionType': 'Created'}, 'sourceIdentifier': '21:', 'sourceName': 'SDK'}]
     return source
 
 
-def getCredits(dmdsec, ns):
+def get_credits(dmdsec, ns):
     """
     Findet den Regisseur
     """
@@ -119,7 +121,7 @@ def getCredits(dmdsec, ns):
     return credits_list
 
 
-def getCast(dmdsec, ns):
+def get_cast(dmdsec, ns):
     """
     Findet alle personen , welche vor der Kamera standen -> cast
     """
@@ -141,7 +143,7 @@ def getCast(dmdsec, ns):
     return cast
 
 
-def getOriginal_duration(dmdsec: Element, ns: dict) -> Union[dict, None]:
+def get_original_duration(dmdsec: Element, ns: dict) -> Union[dict, None]:
     """
     Findet die Länge des Werkes
     21.T11148/b8a2e906c01f78a0d37b
@@ -154,7 +156,7 @@ def getOriginal_duration(dmdsec: Element, ns: dict) -> Union[dict, None]:
     return ""
 
 
-def getSource_identifier(dmdsec, ns):
+def get_source_identifier(dmdsec, ns):
     """
     21.T11148/4f79cf79777ae7c379fe
     Findet die identifier id/url der Hauptorganisation die dieses Werk verwaltet
@@ -162,7 +164,7 @@ def getSource_identifier(dmdsec, ns):
     return dmdsec.find('.//ebucore:organisationDetails', ns).get('organisationId')
 
 
-def getLast_modified(dmdsec, ns):
+def get_last_modified(dmdsec, ns):
     """
     21.T11148/cc9350e8525a1ca5ffe4
     Findet das Datum  an dem die Mets DATei zuletzt verändert wurde.
@@ -175,7 +177,7 @@ def getLast_modified(dmdsec, ns):
     return time
 
 
-def getProduction_companies(dmdsec, ns):
+def get_production_companies(dmdsec, ns):
     """
     Findet die am Werk beteiligten Produktionsfirmen
     21.T11148/cc9350e8525a1ca5ffe4
@@ -185,13 +187,13 @@ def getProduction_companies(dmdsec, ns):
     company = ' '
     # platzhalter companielist nicht zu finden in xml
 
-    #if len(companies) == 0:
+    # if len(companies) == 0:
     #    return None
 
-    return [{'identifier_uri': 'http://gwdg.de', 'name':'TESTNAME'}]
+    return [{'identifier_uri': 'http://gwdg.de', 'name': 'TESTNAME'}]
 
 
-def getOriginal_language(dmdsec, ns):
+def get_original_language(dmdsec, ns):
     """
     Findet die Sprache, in der das Werk erstmalig aufgenommen worden ist
     21.T11148/577d96232ee6ea2f8dfa
@@ -205,7 +207,8 @@ def getOriginal_language(dmdsec, ns):
     # platzhalter nicht klar im xml
     return original_languages
 
-def getCountries_of_reference(dmdsec, ns):
+
+def get_countries_of_reference(dmdsec, ns):
     """
     Findet Ursprungsland
     """
@@ -248,7 +251,7 @@ def getCountries_of_reference(dmdsec, ns):
     return landlist
 
 
-def getYears_of_reference(dmdsec, ns):  # wird eventuell noch abgeändert
+def get_years_of_reference(dmdsec, ns):  # wird eventuell noch abgeändert
     """
     Findet den Erstellsungszeitraum hier benannt year of reference
     21.T11148/089d6db63cf69c35930d
@@ -263,7 +266,7 @@ def getYears_of_reference(dmdsec, ns):  # wird eventuell noch abgeändert
     return years
 
 
-def getRelated_identifier(dmdsec, ns):  # was bedeute das comment?
+def get_related_identifier(dmdsec, ns):  # was bedeute das comment?
     """
     Findet andere Identifier wie ISAN oder EIDR
     Bisher nicht im xml zu finden
@@ -276,7 +279,7 @@ def getRelated_identifier(dmdsec, ns):  # was bedeute das comment?
     return {'relatedIdentifierValue': ' ', 'relatedIdentifierType': ' '}
 
 
-def getGenre(dmdsec, ns):
+def get_genre(dmdsec, ns):
     """
     Findet das Genre eines Filmes
     """
@@ -294,7 +297,7 @@ def getGenre(dmdsec, ns):
     return genrelist
 
 
-def getOriginal_format(dmdsec, ns):
+def get_original_format(dmdsec, ns):
     """
     Gibt das Format zurück, auf welchem der Film gespeichert wurde
     """
@@ -322,7 +325,8 @@ def getOriginal_format(dmdsec, ns):
 
 
 # build json gibt ein dict zurück, welches von der json bibliothek in die fertige json datei ausgegeben werden kann.
-def build_work_json(dmdsec: Element, ns: dict[str, str], pid_work, handleId=True, title=True, series=False, credit=False,
+def build_work_json(dmdsec: Element, ns: dict[str, str], pid_work, handleId=True, title=True, series=False,
+                    credit=False,
                     cast=True,
                     original_duration=True, source=True, source_identifier=False, last_modifed=True,
                     production_companies=True,
@@ -342,44 +346,44 @@ def build_work_json(dmdsec: Element, ns: dict[str, str], pid_work, handleId=True
     #  values.append(getIdentifier (pid_work))
 
     if title:
-        values['title'] = getTitle(dmdsec, ns)
+        values['title'] = get_title(dmdsec, ns)
     if series:
-        values['series'] = getSeriesName(dmdsec, ns)
+        values['series'] = get_series_name(dmdsec, ns)
     if credit:
-        values['credits'] = getCredits(dmdsec, ns)
+        values['credits'] = get_credits(dmdsec, ns)
     if cast:
-        values['cast'] = getCast(dmdsec, ns)
+        values['cast'] = get_cast(dmdsec, ns)
     if original_duration:
-        values['originalDuration'] = getOriginal_duration(dmdsec, ns)
+        values['originalDuration'] = get_original_duration(dmdsec, ns)
     if source:
-        values['source'] = getSource(dmdsec, ns)
+        values['source'] = get_source(dmdsec, ns)
     if source_identifier:
-        values['sourceIdentifier'] = getSource_identifier(dmdsec, ns)
+        values['sourceIdentifier'] = get_source_identifier(dmdsec, ns)
     if last_modifed:
-        values['lastModified'] = getLast_modified(dmdsec, ns)
+        values['lastModified'] = get_last_modified(dmdsec, ns)
     if production_companies:
-        values['productionCompany'] = getProduction_companies(dmdsec, ns)
+        values['productionCompany'] = get_production_companies(dmdsec, ns)
     if countries_of_reference:
-        values['countryOfReference'] = getCountries_of_reference(dmdsec, ns)
+        values['countryOfReference'] = get_countries_of_reference(dmdsec, ns)
     if original_language:
-        values['originalLanguage'] = getOriginal_language(dmdsec, ns)
+        values['originalLanguage'] = get_original_language(dmdsec, ns)
     if years_of_reference:
-        values['yearOfReference'] = getYears_of_reference(dmdsec, ns)
+        values['yearOfReference'] = get_years_of_reference(dmdsec, ns)
     if related_identifier:
-        values['relatedIdentifier'] = getRelated_identifier(dmdsec, ns)
+        values['relatedIdentifier'] = get_related_identifier(dmdsec, ns)
     if original_format:
-        values['originalFormat'] = getOriginal_format(dmdsec, ns)
+        values['originalFormat'] = get_original_format(dmdsec, ns)
     if genre:
-        values['genre'] = getGenre(dmdsec, ns)
+        values['genre'] = get_genre(dmdsec, ns)
     return values
 
 
 def create_identifier_element(pid: str):
-    ebuident = ET.Element('{urn:ebu:metadata-schema:ebucore}identifier', )
-    ebuident.attrib['formatLabel'] = 'hdl.handle.net'
+    ebu_identifier = ET.Element('{urn:ebu:metadata-schema:ebucore}identifier', )
+    ebu_identifier.attrib['formatLabel'] = 'hdl.handle.net'
+    ebu_identifier.tail = '\n          '
 
-    ebuident.tail = '\n          '
-    dcident = ET.SubElement(ebuident, '{http://purl.org/dc/elements/1.1/}identifier')
-    dcident.text = '\n                    ' + pid + '\n              '
-    dcident.tail = '         \n            '
-    return ebuident
+    dc_identifier = ET.SubElement(ebu_identifier, '{http://purl.org/dc/elements/1.1/}identifier')
+    dc_identifier.text = '\n                    ' + pid + '\n              '
+    dc_identifier.tail = '         \n            '
+    return ebu_identifier
