@@ -320,11 +320,11 @@ def m2h(filename,
 
             if not boolean_list_if_pids_exists[2] and not boolean_list_if_pids_exists[1]:
                 # dataobject, work or version has never been seen by the handle -> new mets
-                json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid),
+                json.dump(mets2handle.build_data_object_json(dmdsec, ns, data_object_pid, version_pid),
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid)
+                payload_object = mets2handle.build_data_object_json(dmdsec, ns, data_object_pid, version_pid)
                 handle_data_object = [{'type': 'KIP', 'parsed_data': '21.T11148/b0047df54c686b9df82a'},
                                        {'type': 'movie_db_dataobjects', 'parsed_data': payload_object}]
                 # Create PID
@@ -357,11 +357,11 @@ def m2h(filename,
 
             if boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[
                 2]:  # case fresh dataobject in mets where version and work have a pid already
-                json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid),
+                json.dump(mets2handle.build_data_object_json(dmdsec, ns, data_object_pid, version_pid),
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid)
+                payload_object = mets2handle.build_data_object_json(dmdsec, ns, data_object_pid, version_pid)
                 handle_data_object = [{'type': 'KIP', 'parsed_data': '21.T11148/b0047df54c686b9df82a'},
                                       {'type': 'movie_db_dataobjects', 'parsed_data': payload_object}]
                 # Create PID

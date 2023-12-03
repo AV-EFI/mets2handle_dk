@@ -82,7 +82,7 @@ def getIdentifier(identifier: str) -> dict[str,str]:
     return '21.123/123'
 
 
-def buildData_Object_Json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: str) -> list[dict]:
+def build_data_object_json(dmdsec, ns: dict[str, str], dataobjectPid, workpid: str) -> list[dict]:
     values = {}
     values['item_file_size'] = item_file_size(dmdsec, ns)
     values['specific_carrier_type'] = specific_Carrier_type(dmdsec, ns)
