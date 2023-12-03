@@ -139,23 +139,25 @@ def m2h(filename,
     # empty list to hold PIDs of cinematographic works
     cinematographic_work_pids = []
 
-    # generate a new UUID to use as the PID for the data object
-    # has to be done here, so we have it already when we get to
-    # the Version object where the entry for the PID of a dataobject is needed
+    # Generate a new UUID to use as the PID for the dataobject.
+    # Has to be done here, so we have it already when we get to
+    # the Version object, where the entry for the PID of a dataobject is needed.
     data_object_uuid = str(uuid.uuid4())
-    dataobject_Pid = connection_details['prefix'] + '/{}'.format(data_object_uuid)
+    data_object_pid = connection_details['prefix'] + '/{}'.format(data_object_uuid)
 
+    # Start of the main loop
     for dmdsec in xml_tree.findall('.//mets:dmdSec', ns):
 
         # If the ID attribute of the dmdSec element is in the list of cinematographic works,
         # generate a new UUID to use as the PID for the work, generate the JSON for the work,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the work
         if dmdsec.get('ID') in cinematographic_works:
+            # TODO: In an example file it is unclear if DMDID or ID should be used
             pid = None
             # TODO: hier abfrage, ob Werk bereits Pid hat
 
             for identifier in dmdsec.findall('.//ebucore:identifier', ns):
-                # checks if work has a existing pid. if that is the case we add a 1 to the boolean array
+                # checks if work has an existing pid. if that is the case we add a 1 to the boolean array
                 if identifier.get('formatLabel') == "hdl.handle.net":
                     boolean_list_if_pids_exists[0] = 1
                     cinematographic_work_pids.append(str(identifier.find('.//dc:identifier', ns).text).strip())
@@ -171,7 +173,7 @@ def m2h(filename,
                     pid = work_pid
             elif not boolean_list_if_pids_exists[0]:
                 work_uuid = str(uuid.uuid4())
-                cinematographic_work_pid = '21.T11998/{}'.format(str(work_uuid))
+                cinematographic_work_pid = connection_details['prefix'] + '/{}'.format(str(work_uuid))
 
                 if dumpjsons:
                     json.dump(mets2handle.buildWorkJson(dmdsec, ns, pid_work=cinematographic_work_pid),
@@ -243,8 +245,8 @@ def m2h(filename,
                     pid = version_pid
             elif not boolean_list_if_pids_exists[1]:
                 version_uuid = str(uuid.uuid4())
-                version_pid = '21.T11998/{}'.format(str(version_uuid))
-                dataObjectPids = [dataobject_Pid]
+                version_pid = connection_details['prefix'] + '/{}'.format(str(version_uuid))
+                dataObjectPids = [data_object_pid]
                 if dumpjsons:
                     json.dump(mets2handle.build_version_json(dmdsec, ns, pid_works=cinematographic_work_pids,
                                                              dataobject_pid=dataObjectPids, version_pid=version_pid),
@@ -319,11 +321,11 @@ def m2h(filename,
 
             if not boolean_list_if_pids_exists[2] and not boolean_list_if_pids_exists[1]:
                 # dataobject, work or version has never been seen by the handle -> new mets
-                json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid),
+                json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid),
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
+                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid)
                 handle_data_object = [{'type': 'KIP', 'parsed_data': '21.T11148/b0047df54c686b9df82a'},
                                        {'type': 'movie_db_dataobjects', 'parsed_data': payload_object}]
                 # Create PID
@@ -337,7 +339,7 @@ def m2h(filename,
                 if True: # Just to keep diff output short
                     respon = json.loads(response_from_handle_server.text)
                     pid = respon['handle']
-                    dataobject_Pid = pid
+                    data_object_pid = pid
 
                     # writes new PID into the mets file
                     new_ident = mets2handle.create_identifier_element(pid)
@@ -356,11 +358,11 @@ def m2h(filename,
 
             if boolean_list_if_pids_exists[0] and boolean_list_if_pids_exists[1] and not boolean_list_if_pids_exists[
                 2]:  # case fresh dataobject in mets where version and work have a pid already
-                json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid),
+                json.dump(mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid),
                           open('dataobject.json', 'w', encoding='utf8'),
                           indent=4, sort_keys=False, ensure_ascii=False)
 
-                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, dataobject_Pid, version_pid)
+                payload_object = mets2handle.buildData_Object_Json(dmdsec, ns, data_object_pid, version_pid)
                 handle_data_object = [{'type': 'KIP', 'parsed_data': '21.T11148/b0047df54c686b9df82a'},
                                       {'type': 'movie_db_dataobjects', 'parsed_data': payload_object}]
                 # Create PID
