@@ -69,26 +69,23 @@ def m2h(filename,
         credentials='./mets2handle/credentials/handle_connection.txt',
         dumpjsons=True):
     helpers.logger.info(' --- Start new run ---')
-    # dumpjsons=True  set to false if you wish not to have the jsons that are sent to the
-    # handle server beeing outputted into this directory
 
-    # Define where to write the new XML
+    # If no outfile is provided the original file will be overwritten
     if out_file is None:
         out_file = filename
 
     # Read credentials for the ePIC PID service
     connection_details = {}
-
-    print(Path.cwd())
-    if True:
-        with open(credentials, "r") as f:
-            for line in f:
-                key, value = line.strip().split("|")
-                connection_details[key] = value
+    with open(credentials, "r") as f:
+        for line in f:
+            key, value = line.strip().split("|")
+            connection_details[key] = value
 
     header = {'accept': 'application/json', 'Content-Type': 'application/json'}
 
-    multiworkno = 0  # counter to enumerate the files that result from the json dump for multiworks
+    # counter to enumerate the files that result from the json dump for multiworks
+    # TODO: Explain multiwork
+    multi_work_number = 0
 
     # Defining namespace dictionary to be used later in the code to access XML data
     ns = {"mets": "http://www.loc.gov/METS/", "xlink": "http://www.w3.org/1999/xlink",
@@ -107,28 +104,29 @@ def m2h(filename,
     # Create empty lists for the DMDIDs of cinematographic works, versions, and data objects
     cinematographic_works = []
     versions = []
-    dataobjects = []
+    data_objects = []
     boolean_list_if_pids_exists = [0, 0, 0]
 
-    # Loop through the structure map of the METS file and find the DMDIDs of cinematographic works, versions, and data objects
-    # TODO: Make sure only on valid TYPE is given in the mets file
+    # Loop through the structure map of the METS file and
+    # find the DMDIDs of cinematographic works, versions, and data objects
+    # TODO: Make sure only one valid TYPE is given in the mets file
     for div in struct.findall('.//mets:div', ns):
         element_type = div.get('TYPE')
-
         if element_type == 'cinematographicWork':
             cinematographic_works.append(div.get('DMDID'))
-
-        if element_type == 'version':
+        elif element_type == 'version':
             versions.append(div.get('DMDID'))
+        elif element_type == 'dataObject':
+            data_objects.append(div.get('DMDID'))
+        else:
+            helpers.logger.info('FOUND an unkown DMDID Type'+element_type)
 
-        if element_type == 'dataObject':
-            dataobjects.append(div.get('DMDID'))
     if len(versions) != 1:
         raise ValueError(
             f"Unexpectedly found {len(versions)} versions in {filename}.")
-    if len(dataobjects) != 1:
+    if len(data_objects) != 1:
         raise ValueError(
-            f"Unexpectedly found {len(dataobjects)} DataObjects in {filename}.")
+            f"Unexpectedly found {len(data_objects)} DataObjects in {filename}.")
     if work_pid and len(cinematographic_works) != 1:
         raise ValueError(
             f"Parameter work_pid not allowed since there are"
@@ -177,7 +175,7 @@ def m2h(filename,
 
                 if dumpjsons:
                     json.dump(mets2handle.buildWorkJson(dmdsec, ns, pid_work=cinematographic_work_pid),
-                              open(str(multiworkno) + 'handlejson.json', 'w', encoding='utf8'),
+                              open(str(multi_work_number) + 'handlejson.json', 'w', encoding='utf8'),
                               indent=4, sort_keys=False, ensure_ascii=False)
 
                 payload = mets2handle.buildWorkJson(root, ns, pid_work=cinematographic_work_pid,
@@ -195,7 +193,7 @@ def m2h(filename,
                 response_from_handle_server.raise_for_status()
 
                 respon = json.loads(response_from_handle_server.text)
-                multiworkno = multiworkno + 1
+                multi_work_number = multi_work_number + 1
                 if True: # Just to keep diff output short
                     # gets pid from response
                     pid = respon['handle']
@@ -309,10 +307,10 @@ def m2h(filename,
                         baum = ET.ElementTree(root)
                         baum.write(metsfile, xml_declaration=True, encoding='utf-8')
 
-        # if the ID attribute of the dmdSec element is in the list of dataobjects,
+        # if the ID attribute of the dmdSec element is in the list of data_objects,
         #  generate a new UUID to use as the PID for the work, generate the JSON for the dataobject,
         # write it to a file, and send a PUT request to the handle server to create a new handle for the dataobject
-        if dmdsec.get('ID') in dataobjects:
+        if dmdsec.get('ID') in data_objects:
 
             for identifier in dmdsec.findall('.//ebucore:identifier', ns):
                 # checks if work has a existing pid. if thats the case we add a 1 to the boolean array
